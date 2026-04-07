@@ -26,11 +26,16 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+body{font-family:var(--font);background: radial-gradient(circle at 20% 10%, #111428, #09090E);;color:var(--text);font-size:14px;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
 
 /* ── NOISE OVERLAY ── */
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:1;pointer-events:none;z-index:0;}
 
+.upload-card:hover {
+  box-shadow: 0 10px 40px rgba(255,98,0,0.2);
+}
+
+  
 /* ── AMBIENT GLOW ── */
 .ambient{position:fixed;inset:0;pointer-events:none;z-index:0;}
 .ambient::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,98,0,0.06) 0%,transparent 70%);top:-200px;left:-100px;}
@@ -514,6 +519,9 @@ tr:hover td{background:rgba(255,255,255,0.018);}
 
     <!-- TOOLBAR -->
     <div class="toolbar">
+      <button class="btn btn-blue btn-sm" onclick="pasteFromClipboard()">
+  Import from Extension
+</button>
       <div class="toolbar-left">
         <div class="search-wrap">
           <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -689,6 +697,56 @@ function loadFromLocal() {
     toast('Restored previous session', 'info');
   }
 }
+
+  async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+    const newRows = lines.map((line, i) => {
+      const parts = line.split('\t');
+      return buildRow(rows.length + i, {
+        atcUrl: parts[0],
+        temuPrice: parts[3],
+        temuBrand: parts[5],
+        temuSeller: parts[7],
+        warehouse: parts[11],
+        ffo: parts[12],
+        shipStart: parts[13],
+        shipEnd: parts[14]
+      });
+    });
+
+    rows.push(...newRows);
+    renderTable();
+    updateStats();
+    saveToLocal();
+
+    toast('Imported from extension!', 'success');
+  } catch (err) {
+    toast('Clipboard access denied', 'error');
+  }
+}
+
+  function saveToLocal() {
+  localStorage.setItem('mapflow_data', JSON.stringify(rows));
+}
+
+function loadFromLocal() {
+  const data = localStorage.getItem('mapflow_data');
+  if (data) {
+    rows = JSON.parse(data);
+    loadDashboard();
+    toast('Restored previous session', 'info');
+  }
+}
+
+
+
+
+
+
+  
 // ──  / save ──────────────────────────────────────
 function buildRow(i, data) {
   return {
