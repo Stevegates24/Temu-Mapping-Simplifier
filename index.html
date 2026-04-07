@@ -667,12 +667,29 @@ function processFile(file) {
       }));
 
       loadDashboard();
+      saveToLocal(); 
       toast(`Loaded ${rows.length} rows from "${file.name}"`, 'success');
     } catch(err) { toast('Failed to read file: ' + err.message, 'error'); }
   };
   reader.readAsArrayBuffer(file);
 }
 
+  // ──  / save ──────────────────────────────────────
+
+  function saveToLocal() {
+  localStorage.setItem('mapflow_data', JSON.stringify(rows));
+}
+
+function loadFromLocal() {
+  const data = localStorage.getItem('mapflow_data');
+  if (data) {
+    rows = JSON.parse(data);
+    loadDashboard();
+    saveToLocal(); 
+    toast('Restored previous session', 'info');
+  }
+}
+// ──  / save ──────────────────────────────────────
 function buildRow(i, data) {
   return {
     idx: i, status: 'pending', notes: '',
@@ -810,14 +827,18 @@ function openProduct(idx) {
 
 function markDone(idx) {
   rows[idx].status = 'done';
-  renderTable(); updateStats();
+  renderTable(); 
+  updateStats();
+  saveToLocal();   // ✅ ADD THIS
   toast('Marked as done ✓', 'success');
 }
 
 function markAllVisible() {
   const filtered = getFilteredRows();
   filtered.forEach(r => { if(r.status!=='inf') rows[r.idx].status='done'; });
-  renderTable(); updateStats();
+  renderTable(); 
+  updateStats();
+  saveToLocal();   // ✅ ADD THIS
   toast(`Marked ${filtered.length} rows as done`, 'success');
 }
 
@@ -1006,6 +1027,7 @@ function saveMapping() {
 
   closePanel(); renderTable(); updateStats();
   toast('Mapping saved!', 'success');
+  saveToLocal();
 }
 
 // ── Copy for Excel ────────────────────────────────────────────
@@ -1164,6 +1186,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closePanel(); closeGuidelinesPanel(); }
   if (e.key === 'Enter' && e.metaKey && currentRowIdx !== null) saveMapping();
 });
+
+  window.onload = loadFromLocal;
 </script>
 <script>
 if ('serviceWorker' in navigator) {
