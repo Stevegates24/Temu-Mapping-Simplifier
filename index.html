@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23FF6200'/><text x='16' y='23' text-anchor='middle' font-size='18' font-family='serif'>⇌</text></svg>"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="manifest.json">
 <style>
 /* ── DESIGN TOKENS ── */
 :root{
@@ -1163,6 +1164,11 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closePanel(); closeGuidelinesPanel(); }
   if (e.key === 'Enter' && e.metaKey && currentRowIdx !== null) saveMapping();
 });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
 </script>
 </body>
 </html>
