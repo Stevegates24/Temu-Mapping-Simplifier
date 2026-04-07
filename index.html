@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MapFlow · Temu Mapping Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23FF6200'/><text x='16' y='23' text-anchor='middle' font-size='18' font-family='serif'>⇌</text></svg>"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── DESIGN TOKENS ── */
+:root{
+  --orange:#FF6200;--orange-lt:#FF8C3A;--orange-dk:#D94F00;--orange-glow:rgba(255,98,0,0.18);
+  --blue:#3B7FE8;--blue-lt:#6BA3F5;
+  --green:#16A34A;--green-lt:#34D875;--green-glow:rgba(52,216,117,0.12);
+  --red:#E53E3E;--red-lt:#FC8181;
+  --yellow:#EAB308;
+  --bg:#09090E;--bg2:#0F0F16;--bg3:#141420;--bg4:#1A1A28;--bg5:#20202F;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--border3:rgba(255,255,255,0.18);
+  --text:#ECEAF5;--muted:#7070A0;--subtle:#2F2F45;
+  --radius:12px;--radius-sm:8px;--radius-xs:5px;
+  --font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
+  --shadow-orange:0 0 0 1px var(--orange-glow),0 8px 32px rgba(255,98,0,0.25);
+  --transition:0.18s cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+
+/* ── NOISE OVERLAY ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:1;pointer-events:none;z-index:0;}
+
+/* ── AMBIENT GLOW ── */
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.ambient::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(255,98,0,0.06) 0%,transparent 70%);top:-200px;left:-100px;}
+.ambient::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(59,127,232,0.05) 0%,transparent 70%);bottom:-100px;right:0;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--subtle);border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--muted);}
+
+/* ── HEADER ── */
+.header{
+  position:sticky;top:0;z-index:100;
+  background:linear-gradient(180deg,rgba(9,9,14,0.98) 0%,rgba(9,9,14,0.92) 100%);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;height:60px;
+  display:flex;align-items:center;gap:16px;
+}
+.logo{
+  display:flex;align-items:center;gap:10px;text-decoration:none;
+  flex-shrink:0;
+}
+.logo-mark{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--orange) 0%,var(--orange-dk) 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;box-shadow:0 4px 16px rgba(255,98,0,0.35);
+  flex-shrink:0;
+}
+.logo-text{font-size:16px;font-weight:800;letter-spacing:-0.5px;}
+.logo-text span{color:var(--orange);}
+.logo-sub{font-size:10px;color:var(--muted);font-weight:400;margin-top:-2px;letter-spacing:0.3px;}
+.header-sep{width:1px;height:24px;background:var(--border2);margin:0 4px;}
+.header-stats{display:flex;gap:6px;}
+.stat-chip{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 11px;border-radius:20px;
+  border:1px solid var(--border2);background:var(--bg3);
+  font-size:11px;font-weight:500;color:var(--muted);font-family:var(--mono);
+}
+.stat-chip b{color:var(--text);font-weight:700;}
+.stat-chip.green b{color:var(--green-lt);}
+.stat-chip.orange b{color:var(--orange-lt);}
+.stat-chip.red b{color:var(--red-lt);}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-green{background:var(--green-lt);box-shadow:0 0 6px var(--green-lt);}
+.dot-orange{background:var(--orange-lt);box-shadow:0 0 6px var(--orange-lt);}
+.dot-red{background:var(--red-lt);box-shadow:0 0 6px var(--red-lt);}
+.dot-muted{background:var(--muted);}
+.header-actions{margin-left:auto;display:flex;gap:8px;align-items:center;}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border:none;border-radius:var(--radius-sm);
+  font-size:12.5px;font-weight:600;cursor:pointer;
+  font-family:var(--font);transition:var(--transition);
+  white-space:nowrap;letter-spacing:0.1px;
+}
+.btn svg{flex-shrink:0;}
+.btn:active{transform:scale(0.96);}
+.btn-primary{background:var(--orange);color:#fff;box-shadow:0 2px 10px rgba(255,98,0,0.3);}
+.btn-primary:hover{background:var(--orange-dk);box-shadow:0 4px 18px rgba(255,98,0,0.45);transform:translateY(-1px);}
+.btn-blue{background:var(--blue);color:#fff;box-shadow:0 2px 10px rgba(59,127,232,0.3);}
+.btn-blue:hover{background:#2d6fd6;}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 2px 10px rgba(22,163,74,0.3);}
+.btn-green:hover{background:#15803d;}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);}
+.btn-ghost:hover{background:var(--bg4);color:var(--text);border-color:var(--border3);}
+.btn-danger{background:rgba(220,38,38,0.12);color:var(--red-lt);border:1px solid rgba(220,38,38,0.2);}
+.btn-danger:hover{background:rgba(220,38,38,0.2);}
+.btn-sm{padding:6px 12px;font-size:11.5px;}
+.btn-xs{padding:4px 9px;font-size:11px;}
+.btn-icon{padding:7px;border-radius:var(--radius-sm);}
+
+/* ── MAIN LAYOUT ── */
+.main{max-width:1440px;margin:0 auto;padding:28px 24px;position:relative;z-index:1;}
+
+/* ── UPLOAD SECTION ── */
+.upload-section{display:flex;flex-direction:column;align-items:center;padding:64px 20px 40px;gap:24px;animation:fadeIn 0.5s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.upload-hero{text-align:center;max-width:480px;}
+.upload-hero-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:20px;border:1px solid rgba(255,98,0,0.25);
+  background:rgba(255,98,0,0.08);color:var(--orange-lt);
+  font-size:11px;font-weight:600;letter-spacing:0.5px;margin-bottom:20px;
+}
+.upload-hero h1{font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1.15;margin-bottom:10px;}
+.upload-hero h1 span{
+  background:linear-gradient(135deg,var(--orange) 0%,#FFB347 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.upload-hero p{color:var(--muted);font-size:14px;line-height:1.7;}
+
+.upload-cards{display:flex;gap:16px;width:100%;max-width:680px;flex-wrap:wrap;}
+.upload-card{
+  flex:1;min-width:280px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  padding:32px 28px;cursor:pointer;transition:var(--transition);
+  position:relative;overflow:hidden;text-align:center;
+}
+.upload-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,rgba(255,98,0,0.06) 0%,transparent 60%);
+  opacity:0;transition:var(--transition);
+}
+.upload-card:hover::before{opacity:1;}
+.upload-card:hover{border-color:rgba(255,98,0,0.3);transform:translateY(-2px);box-shadow:0 8px 32px rgba(255,98,0,0.12);}
+.upload-card.drag{border-color:var(--orange);background:rgba(255,98,0,0.05);transform:scale(1.01);}
+.upload-card input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2;}
+.upload-icon-wrap{
+  width:56px;height:56px;border-radius:16px;margin:0 auto 16px;
+  background:linear-gradient(135deg,var(--bg3),var(--bg4));border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+}
+.upload-card h3{font-size:15px;font-weight:700;margin-bottom:6px;}
+.upload-card p{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.upload-formats{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;}
+.format-tag{padding:2px 8px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);font-size:10px;font-family:var(--mono);color:var(--muted);}
+
+.divider-or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:0.5px;width:100%;max-width:680px;}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);}
+
+.paste-card{
+  width:100%;max-width:680px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;
+}
+.paste-card h3{font-size:13px;font-weight:600;margin-bottom:10px;color:var(--muted);}
+.paste-card textarea{
+  width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:11.5px;
+  resize:vertical;min-height:90px;outline:none;transition:border-color var(--transition);line-height:1.7;
+}
+.paste-card textarea:focus{border-color:var(--orange);}
+.paste-card textarea::placeholder{color:var(--subtle);}
+.paste-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end;}
+
+/* ── DASHBOARD ── */
+#dashboard{animation:fadeIn 0.4s ease;}
+
+/* ── PROGRESS ── */
+.progress-wrap{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 20px;margin-bottom:18px;
+  display:flex;align-items:center;gap:20px;
+}
+.progress-info{flex:1;}
+.progress-label-row{display:flex;justify-content:space-between;margin-bottom:8px;}
+.progress-title{font-size:12px;font-weight:600;color:var(--muted);}
+.progress-pct{font-size:12px;font-weight:700;color:var(--orange);font-family:var(--mono);}
+.progress-track{height:4px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--orange) 0%,var(--orange-lt) 100%);transition:width 0.5s cubic-bezier(.4,0,.2,1);position:relative;}
+.progress-fill::after{
+  content:'';position:absolute;right:0;top:0;bottom:0;width:20px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3));
+  animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer{from{opacity:0}50%{opacity:1}to{opacity:0}}
+.progress-mini-stats{display:flex;gap:10px;flex-shrink:0;}
+.mini-stat{text-align:center;}
+.mini-stat-val{font-size:22px;font-weight:800;line-height:1;font-family:var(--mono);}
+.mini-stat-val.green{color:var(--green-lt);}
+.mini-stat-val.orange{color:var(--orange-lt);}
+.mini-stat-val.blue{color:var(--blue-lt);}
+.mini-stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.toolbar-left{display:flex;align-items:center;gap:8px;flex:1;}
+.search-wrap{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);
+  padding:8px 12px;display:flex;align-items:center;gap:8px;width:260px;
+  transition:border-color var(--transition);
+}
+.search-wrap:focus-within{border-color:rgba(255,98,0,0.4);}
+.search-wrap svg{color:var(--muted);flex-shrink:0;}
+.search-wrap input{background:none;border:none;outline:none;color:var(--text);font-size:12.5px;width:100%;font-family:var(--font);}
+.search-wrap input::placeholder{color:var(--subtle);}
+
+.filter-pills{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;}
+.filter-pill{
+  padding:4px 12px;border-radius:5px;border:none;
+  background:transparent;color:var(--muted);font-size:11.5px;font-weight:500;
+  cursor:pointer;transition:var(--transition);font-family:var(--font);
+}
+.filter-pill.active{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(255,98,0,0.3);}
+.filter-pill:not(.active):hover{background:var(--bg4);color:var(--text);}
+
+/* ── TABLE ── */
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.table-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead tr{background:var(--bg3);border-bottom:1px solid var(--border2);}
+th{
+  padding:10px 14px;text-align:left;
+  font-size:10px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.7px;
+  white-space:nowrap;position:sticky;top:0;z-index:10;background:var(--bg3);
+}
+td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;transition:background var(--transition);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.018);}
+.row-num{color:var(--subtle);font-family:var(--mono);font-size:11px;}
+.mkpl-badge{
+  display:inline-flex;align-items:center;
+  padding:2px 8px;border-radius:4px;
+  font-size:10px;font-weight:700;font-family:var(--mono);
+  background:rgba(59,127,232,0.12);color:var(--blue-lt);border:1px solid rgba(59,127,232,0.2);
+}
+.url-cell{
+  max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+}
+.price-val{color:var(--orange-lt);font-weight:700;font-family:var(--mono);font-size:11.5px;}
+.asin-input{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-xs);
+  padding:4px 8px;width:120px;color:var(--text);font-family:var(--mono);
+  font-size:11px;outline:none;transition:border-color var(--transition);
+}
+.asin-input:focus{border-color:var(--orange);}
+
+/* Status badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;white-space:nowrap;}
+.badge-pending{background:rgba(112,112,160,0.12);color:var(--muted);border:1px solid rgba(112,112,160,0.15);}
+.badge-done{background:var(--green-glow);color:var(--green-lt);border:1px solid rgba(52,216,117,0.2);}
+.badge-open{background:var(--orange-glow);color:var(--orange-lt);border:1px solid rgba(255,98,0,0.2);}
+.badge-inf{background:rgba(229,62,62,0.1);color:var(--red-lt);border:1px solid rgba(229,62,62,0.2);}
+
+/* Action buttons */
+.action-cell{display:flex;gap:5px;align-items:center;white-space:nowrap;}
+
+/* Empty state */
+.empty-state{text-align:center;padding:64px 20px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:14px;opacity:0.5;}
+.empty-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.empty-sub{font-size:12.5px;}
+
+/* ── SIDE PANEL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:150;opacity:0;pointer-events:none;transition:opacity var(--transition);}
+.overlay.show{opacity:1;pointer-events:all;}
+
+.panel{
+  position:fixed;right:0;top:0;bottom:0;width:400px;
+  background:var(--bg2);border-left:1px solid var(--border2);
+  z-index:200;transform:translateX(105%);
+  transition:transform 0.28s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel.open{transform:translateX(0);}
+.panel-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;flex-shrink:0;
+  background:linear-gradient(180deg,var(--bg3) 0%,var(--bg2) 100%);
+}
+.panel-header-icon{
+  width:34px;height:34px;border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,var(--orange),var(--orange-dk));
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  box-shadow:0 3px 10px rgba(255,98,0,0.3);flex-shrink:0;
+}
+.panel-title{font-size:14px;font-weight:700;}
+.panel-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.panel-close{
+  margin-left:auto;background:var(--bg4);border:1px solid var(--border);
+  color:var(--muted);border-radius:6px;padding:5px 8px;cursor:pointer;
+  font-size:14px;transition:var(--transition);line-height:1;
+}
+.panel-close:hover{background:var(--bg5);color:var(--text);}
+.panel-body{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+.panel-section{display:flex;flex-direction:column;gap:10px;}
+.panel-section-hd{
+  font-size:10px;font-weight:700;color:var(--orange);
+  text-transform:uppercase;letter-spacing:1px;
+  display:flex;align-items:center;gap:6px;margin-bottom:2px;
+}
+.panel-section-hd::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,98,0,0.2),transparent);}
+.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.panel-grid.full{grid-template-columns:1fr;}
+.panel-field{display:flex;flex-direction:column;gap:4px;}
+.panel-label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.panel-input,.panel-select,.panel-textarea{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);
+  padding:8px 11px;color:var(--text);font-family:var(--font);font-size:12.5px;
+  outline:none;transition:border-color var(--transition),box-shadow var(--transition);
+}
+.panel-input:focus,.panel-select:focus,.panel-textarea:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow);}
+.panel-input::placeholder,.panel-textarea::placeholder{color:var(--subtle);}
+.panel-select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237070A0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+.panel-select option{background:var(--bg3);}
+.panel-textarea{resize:vertical;min-height:70px;line-height:1.6;}
+.panel-url-row{display:flex;gap:6px;align-items:center;}
+.panel-url-box{
+  flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:7px 10px;font-size:10.5px;font-family:var(--mono);color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.panel-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;background:var(--bg2);}
+
+/* ── TOAST ── */
+.toast-stack{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.toast{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:10px;
+  padding:12px 16px;font-size:12.5px;min-width:240px;
+  animation:toastIn 0.28s cubic-bezier(.34,1.56,.64,1);
+  display:flex;align-items:center;gap:10px;pointer-events:all;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+.toast-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+.toast.success .toast-icon{background:var(--green-glow);border:1px solid rgba(52,216,117,0.2);}
+.toast.error .toast-icon{background:rgba(229,62,62,0.1);border:1px solid rgba(229,62,62,0.2);}
+.toast.info .toast-icon{background:rgba(59,127,232,0.1);border:1px solid rgba(59,127,232,0.2);}
+.toast-msg{flex:1;line-height:1.4;}
+.toast-close{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;font-size:14px;opacity:0.6;}
+.toast-close:hover{opacity:1;}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px) scale(0.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+.toast-exit{animation:toastOut 0.2s ease forwards;}
+@keyframes toastOut{to{opacity:0;transform:translateX(20px)}}
+
+/* ── KEYBOARD SHORTCUT CHIP ── */
+.kbd{display:inline-flex;align-items:center;justify-content:center;padding:1px 5px;border-radius:3px;background:var(--bg4);border:1px solid var(--border2);font-family:var(--mono);font-size:9px;color:var(--muted);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .panel{width:100%;}
+  .header-stats,.header-sep{display:none;}
+  .progress-mini-stats{display:none;}
+  .upload-cards{flex-direction:column;}
+}
+@media(max-width:600px){
+  .header{padding:0 16px;}
+  .main{padding:16px;}
+  .filter-pills .filter-pill{padding:4px 8px;font-size:10.5px;}
+}
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- HEADER                                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-mark">⇌</div>
+    <div>
+      <div class="logo-text">Map<span>Flow</span></div>
+      <div class="logo-sub">Temu · Amazon · Mapping</div>
+    </div>
+  </div>
+
+  <div class="header-sep"></div>
+
+  <div class="header-stats" id="header-stats" style="display:none">
+    <div class="stat-chip">
+      <span class="dot dot-muted"></span>
+      Total: <b id="hstat-total">0</b>
+    </div>
+    <div class="stat-chip green">
+      <span class="dot dot-green"></span>
+      Done: <b id="hstat-done">0</b>
+    </div>
+    <div class="stat-chip orange">
+      <span class="dot dot-orange"></span>
+      Pending: <b id="hstat-pending">0</b>
+    </div>
+    <div class="stat-chip red">
+      <span class="dot dot-red"></span>
+      INF: <b id="hstat-inf">0</b>
+    </div>
+  </div>
+
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" id="export-btn" onclick="exportExcel()" style="display:none">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Excel
+    </button>
+    <button class="btn btn-ghost btn-sm" id="reset-btn" onclick="resetAll()" style="display:none">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      New File
+    </button>
+    <button class="btn btn-ghost btn-sm" onclick="showGuidelinesPanel()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      Guidelines
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MAIN                                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- ── UPLOAD SECTION ── -->
+  <div class="upload-section" id="upload-section">
+
+    <div class="upload-hero">
+      <div class="upload-hero-tag">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5" opacity="0.5"/><circle cx="5" cy="5" r="2.5"/></svg>
+        Temu → Amazon Mapping Tool
+      </div>
+      <h1>Smart Product<br/><span>Mapping</span>, Simplified</h1>
+      <p>Upload your batch Excel or paste Temu links to start mapping products against Amazon with guided workflows.</p>
+    </div>
+
+    <div class="upload-cards">
+      <!-- Excel upload card -->
+      <div class="upload-card" id="upload-zone">
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(event)"/>
+        <div class="upload-icon-wrap">📊</div>
+        <h3>Upload Batch File</h3>
+        <p>Drop your Excel or CSV file with Temu product URLs. Expects a <strong style="color:var(--orange)">PRODUCT URL</strong> column.</p>
+        <div class="upload-formats">
+          <span class="format-tag">.xlsx</span>
+          <span class="format-tag">.xls</span>
+          <span class="format-tag">.csv</span>
+        </div>
+        <div style="margin-top:16px;">
+          <span class="btn btn-primary btn-sm" style="pointer-events:none">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Choose File
+          </span>
+        </div>
+      </div>
+
+      <!-- Paste card -->
+      <div class="upload-card" style="cursor:default" onclick="">
+        <div class="upload-icon-wrap">🔗</div>
+        <h3>Paste Links</h3>
+        <p>Paste Temu product URLs directly — one per line. Great for quick ad-hoc mapping sessions.</p>
+        <div style="margin-top:12px;text-align:left">
+          <textarea id="paste-area" placeholder="https://www.temu.com/de-en/product-g-601...&#10;https://www.temu.com/de-en/another-g-601..." style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:10.5px;resize:none;height:72px;outline:none;line-height:1.7;" onclick="event.stopPropagation()" onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+          <div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end">
+            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();document.getElementById('paste-area').value=''">Clear</button>
+            <button class="btn btn-primary btn-xs" onclick="event.stopPropagation();loadFromPaste()">
+              Load Links
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── DASHBOARD ── -->
+  <div id="dashboard" style="display:none">
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <div class="progress-label-row">
+          <span class="progress-title" id="progress-text">0 of 0 completed</span>
+          <span class="progress-pct" id="progress-pct">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+      <div class="progress-mini-stats">
+        <div class="mini-stat">
+          <div class="mini-stat-val" id="ms-total">0</div>
+          <div class="mini-stat-label">Total</div>
+        </div>
+        <div style="width:1px;background:var(--border);margin:4px 0"></div>
+        <div class="mini-stat">
+          <div class="mini-stat-val green" id="ms-done">0</div>
+          <div class="mini-stat-label">Done</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-val orange" id="ms-pending">0</div>
+          <div class="mini-stat-label">Pending</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-val blue" id="ms-open">0</div>
+          <div class="mini-stat-label">Opened</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="search-wrap">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search URL, MKPL, ASIN, brand..." oninput="applyFilter()"/>
+        </div>
+        <div class="filter-pills">
+          <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+          <button class="filter-pill" onclick="setFilter('pending',this)">Pending</button>
+          <button class="filter-pill" onclick="setFilter('open',this)">Opened</button>
+          <button class="filter-pill" onclick="setFilter('done',this)">Done</button>
+          <button class="filter-pill" onclick="setFilter('inf',this)">INF</button>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="markAllVisible()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark Visible Done
+      </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th>MKPL</th>
+              <th>Temu Product URL</th>
+              <th>Status</th>
+              <th>Mapped ASIN</th>
+              <th>Temu Price</th>
+              <th>Temu Brand</th>
+              <th>Mapping</th>
+              <th>Warehouse</th>
+              <th style="width:140px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- OVERLAY                                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MAPPING DETAIL PANEL                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="detail-panel">
+  <div class="panel-header">
+    <div class="panel-header-icon">📝</div>
+    <div>
+      <div class="panel-title">Mapping Details</div>
+      <div class="panel-sub" id="panel-row-label">Row #—</div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+  <div class="panel-footer">
+    <button class="btn btn-green" style="flex:1" onclick="saveMapping()">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Save Mapping
+    </button>
+    <button class="btn btn-ghost" onclick="closePanel()">Cancel</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- GUIDELINES PANEL                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="guidelines-panel">
+  <div class="panel-header">
+    <div class="panel-header-icon">📋</div>
+    <div>
+      <div class="panel-title">Mapping Guidelines</div>
+      <div class="panel-sub">Quick reference</div>
+    </div>
+    <button class="panel-close" onclick="closeGuidelinesPanel()">✕</button>
+  </div>
+  <div class="panel-body" id="guidelines-body" style="gap:10px;">
+    <!-- Injected below -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TOASTS                                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="toast-stack" id="toast-stack"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCRIPT                                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+// ── State ────────────────────────────────────────────────────
+let rows = [];
+let currentFilter = 'all';
+let currentRowIdx = null;
+
+// ── Drag-drop upload ─────────────────────────────────────────
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+function handleFileUpload(e) { const f = e.target.files[0]; if (f) processFile(f); }
+
+// ── Process Excel / CSV ──────────────────────────────────────
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      if (!data.length) { toast('No data found in file.', 'error'); return; }
+
+      const firstRow = data[0];
+      const urlKey = Object.keys(firstRow).find(k => /product.*url|temu.*url|url|link/i.test(k))
+        || Object.keys(firstRow).find(k => String(firstRow[k]).includes('temu.com'));
+
+      if (!urlKey) { toast('Could not find a Product URL column.', 'error'); return; }
+
+      rows = data.map((row, i) => buildRow(i, {
+        mkpl: row['MKPL'] || row['Marketplace'] || '',
+        url: String(row[urlKey] || '').trim(),
+        sku: row['Sku'] || row['SKU'] || '',
+        atcUrl: row['Mapped ATC URL'] || '',
+        mappedAsin: row['Mapped ASIN'] || '',
+        amazonPrice: row['Amazon Price'] || '',
+        temuPrice: row['Temu Price'] || '',
+        inexactCode: row['Inexact Reason Code'] || '',
+        temuBrand: row['Temu Brand'] || '',
+        amazonBrand: row['Amazon Brand'] || '',
+        temuSeller: row['Temu Seller Name'] || '',
+        warehouse: row['Warehouse Details'] || '',
+        ffo: row['FFO'] || '',
+        shipStart: row['Shipping Start Date'] || '',
+        shipEnd: row['Shipping End Date'] || '',
+        mappingStatus: row['Mapping Status'] || '',
+        matchingType: row['Matching Type'] || '',
+        infReason: row['INF Reason'] || '',
+        _original: row
+      }));
+
+      loadDashboard();
+      toast(`Loaded ${rows.length} rows from "${file.name}"`, 'success');
+    } catch(err) { toast('Failed to read file: ' + err.message, 'error'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function buildRow(i, data) {
+  return {
+    idx: i, status: 'pending', notes: '',
+    mkpl:'', url:'', sku:'', atcUrl:'', mappedAsin:'', amazonPrice:'',
+    temuPrice:'', inexactCode:'', temuBrand:'', amazonBrand:'',
+    temuSeller:'', warehouse:'', ffo:'', shipStart:'', shipEnd:'',
+    mappingStatus:'', matchingType:'', infReason:'', _original:{},
+    ...data
+  };
+}
+
+// ── Paste links ───────────────────────────────────────────────
+function loadFromPaste() {
+  const text = document.getElementById('paste-area').value.trim();
+  if (!text) { toast('Please paste some URLs first.', 'error'); return; }
+  const urls = text.split('\n').map(l => l.trim()).filter(l => l.includes('temu.com'));
+  if (!urls.length) { toast('No valid Temu URLs found.', 'error'); return; }
+  rows = urls.map((url, i) => buildRow(i, { url }));
+  loadDashboard();
+  toast(`Loaded ${rows.length} URLs`, 'success');
+}
+
+// ── Dashboard init ────────────────────────────────────────────
+function loadDashboard() {
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('header-stats').style.display = 'flex';
+  document.getElementById('export-btn').style.display = 'flex';
+  document.getElementById('reset-btn').style.display = 'flex';
+  renderTable(); updateStats();
+}
+
+// ── Filter & search ───────────────────────────────────────────
+function getFilteredRows() {
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase();
+  return rows.filter(r => {
+    if (currentFilter !== 'all' && r.status !== currentFilter) return false;
+    if (q && !JSON.stringify(r).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+function applyFilter() { renderTable(); }
+
+// ── Render table ──────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const filtered = getFilteredRows();
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No rows match</div><div class="empty-sub">Try adjusting your filter or search query</div></div></td></tr>`;
+    return;
+  }
+
+  const statusMap = {
+    pending:['badge-pending','⏳','Pending'],
+    done:['badge-done','✓','Done'],
+    open:['badge-open','↗','Opened'],
+    inf:['badge-inf','✕','INF']
+  };
+
+  tbody.innerHTML = filtered.map(r => {
+    const [badgeCls, ico, lbl] = statusMap[r.status] || statusMap.pending;
+    const shortUrl = r.url.replace(/https?:\/\/(www\.)?temu\.com\//,'').substring(0,44);
+    const mappingBadge = r.mappingStatus
+      ? `<span style="font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:4px;background:${r.mappingStatus==='IF'?'rgba(52,216,117,0.1)':'rgba(229,62,62,0.1)'};color:${r.mappingStatus==='IF'?'var(--green-lt)':'var(--red-lt)'};border:1px solid ${r.mappingStatus==='IF'?'rgba(52,216,117,0.2)':'rgba(229,62,62,0.2)'}">${r.mappingStatus}${r.matchingType?'·'+r.matchingType:''}</span>`
+      : '<span style="color:var(--subtle)">—</span>';
+    const warehouseBadge = r.warehouse
+      ? `<span style="font-size:11px;color:${r.warehouse==='Local'?'var(--green-lt)':'var(--muted)'}">${r.warehouse==='Local'?'🏠':'🌐'} ${r.warehouse}</span>`
+      : '<span style="color:var(--subtle)">—</span>';
+
+    return `<tr>
+      <td class="row-num">${r.idx+1}</td>
+      <td>${r.mkpl?`<span class="mkpl-badge">${r.mkpl}</span>`:'<span style="color:var(--subtle)">—</span>'}</td>
+      <td class="url-cell" title="${r.url}">${shortUrl||'—'}</td>
+      <td><span class="badge ${badgeCls}">${ico} ${lbl}</span></td>
+      <td><input class="asin-input" placeholder="B0XXXXXXXX" value="${r.mappedAsin}" oninput="rows[${r.idx}].mappedAsin=this.value" onchange="rows[${r.idx}].mappedAsin=this.value"/></td>
+      <td>${r.temuPrice?`<span class="price-val">${r.temuPrice}</span>`:'<span style="color:var(--subtle)">—</span>'}</td>
+      <td style="font-size:12px">${r.temuBrand||'<span style="color:var(--subtle)">—</span>'}</td>
+      <td>${mappingBadge}</td>
+      <td>${warehouseBadge}</td>
+      <td class="action-cell">
+        ${r.url?`<button class="btn btn-primary btn-xs" onclick="openProduct(${r.idx})" title="Open Temu page">
+          <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open
+        </button>`:''}
+        <button class="btn btn-blue btn-xs" onclick="openPanel(${r.idx})" title="Fill mapping data">
+          <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Map
+        </button>
+        <button class="btn btn-ghost btn-xs btn-icon" onclick="markDone(${r.idx})" title="Mark done">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function updateStats() {
+  const total = rows.length;
+  const done  = rows.filter(r=>r.status==='done').length;
+  const pend  = rows.filter(r=>r.status==='pending').length;
+  const open  = rows.filter(r=>r.status==='open').length;
+  const inf   = rows.filter(r=>r.status==='inf').length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+
+  ['total','done','pending','inf'].forEach(k => {
+    const v = {total,done,pending:pend,inf}[k];
+    const h = document.getElementById('hstat-'+k); if(h) h.textContent=v;
+  });
+  ['total','done','pending','open'].forEach(k => {
+    const v = {total,done,pending:pend,open}[k];
+    const m = document.getElementById('ms-'+k); if(m) m.textContent=v;
+  });
+
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-text').textContent = `${done} of ${total} completed`;
+  document.getElementById('progress-pct').textContent  = pct+'%';
+}
+
+// ── Actions ───────────────────────────────────────────────────
+function openProduct(idx) {
+  const r = rows[idx];
+  if (!r.url) return;
+  window.open(r.url, '_blank');
+  if (r.status === 'pending') { rows[idx].status = 'open'; renderTable(); updateStats(); }
+  toast('Opened in new tab. Use your scraper, then click Map to fill in data.', 'info');
+}
+
+function markDone(idx) {
+  rows[idx].status = 'done';
+  renderTable(); updateStats();
+  toast('Marked as done ✓', 'success');
+}
+
+function markAllVisible() {
+  const filtered = getFilteredRows();
+  filtered.forEach(r => { if(r.status!=='inf') rows[r.idx].status='done'; });
+  renderTable(); updateStats();
+  toast(`Marked ${filtered.length} rows as done`, 'success');
+}
+
+// ── Detail Panel ──────────────────────────────────────────────
+function openPanel(idx) {
+  closeGuidelinesPanel();
+  currentRowIdx = idx;
+  const r = rows[idx];
+  document.getElementById('panel-row-label').textContent = `Row #${r.idx+1}${r.sku?' · SKU: '+r.sku:''}`;
+
+  const sel = (id,val,opts) => `<select class="panel-select" id="${id}">
+    <option value="">— Select —</option>
+    ${opts.map(([v,l])=>`<option value="${v}" ${r[val]===v?'selected':''}>${l}</option>`).join('')}
+  </select>`;
+
+  const inexactOptions = [
+    ['Brand + Size','Brand + Size'],['Brand Inexact','Brand Inexact'],
+    ['Brand + Material','Brand + Material'],['Pack Inexact','Pack Inexact'],
+    ['Color Inexact','Color Inexact'],['Size Inexact','Size Inexact'],
+    ['Design/Pattern Inexact','Design/Pattern Inexact'],['Specification Inexact','Specification Inexact']
+  ];
+  if(r.inexactCode && !inexactOptions.find(o=>o[0]===r.inexactCode))
+    inexactOptions.push([r.inexactCode,r.inexactCode]);
+
+  const infOptions = [
+    ['Comp OOS','Comp OOS (Out of Stock)'],['Invalid URL','Invalid URL'],
+    ['Blockage','Blockage'],['NULL','NULL'],['Pack/Bundle Mismatch','Pack/Bundle Mismatch']
+  ];
+  if(r.infReason && !infOptions.find(o=>o[0]===r.infReason))
+    infOptions.push([r.infReason,r.infReason]);
+
+  document.getElementById('panel-body').innerHTML = `
+    <!-- TEMU PRODUCT -->
+    <div class="panel-section">
+      <div class="panel-section-hd">Temu Product</div>
+      <div class="panel-field">
+        <div class="panel-label">Product URL</div>
+        <div class="panel-url-row">
+          <div class="panel-url-box" title="${r.url}">${r.url||'—'}</div>
+          ${r.url?`<button class="btn btn-primary btn-xs" onclick="openProduct(${idx})">
+            <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Open
+          </button>`:''}
+        </div>
+      </div>
+      <div class="panel-field">
+        <div class="panel-label">ATC URL (from scraper)</div>
+        <input class="panel-input" id="p-atcUrl" placeholder="https://www.temu.com/goods.html?..." value="${r.atcUrl}"/>
+      </div>
+      <div class="panel-grid">
+        <div class="panel-field">
+          <div class="panel-label">Temu Price</div>
+          <input class="panel-input" id="p-temuPrice" placeholder="e.g. 3.95" value="${r.temuPrice}"/>
+        </div>
+        <div class="panel-field">
+          <div class="panel-label">Temu Brand</div>
+          <input class="panel-input" id="p-temuBrand" placeholder="Brand / Not Mentioned" value="${r.temuBrand}"/>
+        </div>
+      </div>
+      <div class="panel-grid">
+        <div class="panel-field">
+          <div class="panel-label">Temu Seller</div>
+          <input class="panel-input" id="p-temuSeller" placeholder="Seller name" value="${r.temuSeller}"/>
+        </div>
+        <div class="panel-field">
+          <div class="panel-label">Warehouse</div>
+          ${sel('p-warehouse','warehouse',[['Local','🏠 Local'],['Non Local','🌐 Non Local']])}
+        </div>
+      </div>
+      <div class="panel-grid">
+        <div class="panel-field">
+          <div class="panel-label">FFO (Origin)</div>
+          <input class="panel-input" id="p-ffo" placeholder="e.g. Guangdong or NA" value="${r.ffo}"/>
+        </div>
+        <div class="panel-field"><!-- spacer --></div>
+      </div>
+      <div class="panel-grid">
+        <div class="panel-field">
+          <div class="panel-label">Ship Start</div>
+          <input class="panel-input" id="p-shipStart" placeholder="MM/dd/yyyy" value="${r.shipStart}"/>
+        </div>
+        <div class="panel-field">
+          <div class="panel-label">Ship End</div>
+          <input class="panel-input" id="p-shipEnd" placeholder="MM/dd/yyyy" value="${r.shipEnd}"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAPPING -->
+    <div class="panel-section">
+      <div class="panel-section-hd">Mapping Data</div>
+      <div class="panel-grid">
+        <div class="panel-field">
+          <div class="panel-label">Mapping Status</div>
+          ${sel('p-mappingStatus','mappingStatus',[['IF','IF – In Full'],['INF','INF – Not Found']])}
+        </div>
+        <div class="panel-field">
+          <div class="panel-label">Matching Type</div>
+          ${sel('p-matchingType','matchingType',[['EXACT','EXACT'],['INEXACT','INEXACT'],['NULL','NULL']])}
+        </div>
+      </div>
+      <div class="panel-grid">
+        <div class="panel-field">
+          <div class="panel-label">Mapped ASIN</div>
+          <input class="panel-input" id="p-mappedAsin" placeholder="B0XXXXXXXX" value="${r.mappedAsin}"/>
+        </div>
+        <div class="panel-field">
+          <div class="panel-label">Amazon Price</div>
+          <input class="panel-input" id="p-amazonPrice" placeholder="e.g. 25.99" value="${r.amazonPrice}"/>
+        </div>
+      </div>
+      <div class="panel-grid">
+        <div class="panel-field">
+          <div class="panel-label">Inexact Reason Code</div>
+          <select class="panel-select" id="p-inexactCode">
+            <option value="">— Select —</option>
+            ${inexactOptions.map(([v,l])=>`<option value="${v}" ${r.inexactCode===v?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+        <div class="panel-field">
+          <div class="panel-label">Amazon Brand</div>
+          <input class="panel-input" id="p-amazonBrand" placeholder="Amazon brand" value="${r.amazonBrand}"/>
+        </div>
+      </div>
+      <div class="panel-field">
+        <div class="panel-label">INF Reason</div>
+        <select class="panel-select" id="p-infReason">
+          <option value="">— Select —</option>
+          ${infOptions.map(([v,l])=>`<option value="${v}" ${r.infReason===v?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="panel-field">
+        <div class="panel-label">Notes</div>
+        <textarea class="panel-textarea" id="p-notes" placeholder="Any notes or observations...">${r.notes||''}</textarea>
+      </div>
+    </div>
+
+    <!-- COPY ROW -->
+    <div class="panel-section">
+      <div class="panel-section-hd">Quick Copy</div>
+      <button class="btn btn-ghost" style="width:100%" onclick="copyRowForExcel(${idx})">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copy Row (Tab-separated for Excel)
+      </button>
+      <div style="font-size:10px;color:var(--muted);line-height:1.6;background:var(--bg3);padding:8px 10px;border-radius:6px;border:1px solid var(--border);">
+        Order: <strong style="color:var(--text)">ATC URL</strong> · · · <strong style="color:var(--text)">Temu Price</strong> · <strong style="color:var(--text)">Temu Brand</strong> · <strong style="color:var(--text)">Seller</strong> · · · · <strong style="color:var(--text)">Warehouse</strong> · <strong style="color:var(--text)">FFO</strong> · <strong style="color:var(--text)">Start</strong> · <strong style="color:var(--text)">End</strong>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closePanel() {
+  document.getElementById('detail-panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  currentRowIdx = null;
+}
+
+function saveMapping() {
+  if (currentRowIdx === null) return;
+  const idx = currentRowIdx;
+  const g = id => document.getElementById(id)?.value || '';
+
+  rows[idx].atcUrl        = g('p-atcUrl');
+  rows[idx].temuPrice     = g('p-temuPrice');
+  rows[idx].temuBrand     = g('p-temuBrand');
+  rows[idx].temuSeller    = g('p-temuSeller');
+  rows[idx].warehouse     = g('p-warehouse');
+  rows[idx].ffo           = g('p-ffo');
+  rows[idx].shipStart     = g('p-shipStart');
+  rows[idx].shipEnd       = g('p-shipEnd');
+  rows[idx].mappingStatus = g('p-mappingStatus');
+  rows[idx].matchingType  = g('p-matchingType');
+  rows[idx].mappedAsin    = g('p-mappedAsin');
+  rows[idx].amazonPrice   = g('p-amazonPrice');
+  rows[idx].inexactCode   = g('p-inexactCode');
+  rows[idx].amazonBrand   = g('p-amazonBrand');
+  rows[idx].infReason     = g('p-infReason');
+  rows[idx].notes         = g('p-notes');
+
+  // Auto-status
+  if (rows[idx].infReason) rows[idx].status = 'inf';
+  else if (rows[idx].mappedAsin || rows[idx].mappingStatus) rows[idx].status = 'done';
+
+  closePanel(); renderTable(); updateStats();
+  toast('Mapping saved!', 'success');
+}
+
+// ── Copy for Excel ────────────────────────────────────────────
+function copyRowForExcel(idx) {
+  const r = rows[idx];
+  const row = [r.atcUrl,'','',r.temuPrice,'',r.temuBrand,'',r.temuSeller,'','','',r.warehouse,r.ffo,r.shipStart,r.shipEnd].join('\t');
+  navigator.clipboard.writeText(row).then(() => toast('Copied! Paste into Excel.','success')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=row;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('Copied!','success');
+  });
+}
+
+// ── Export Excel ──────────────────────────────────────────────
+function exportExcel() {
+  const data = rows.map(r => ({
+    'MKPL':r.mkpl,'PRODUCT URL':r.url,'Sku':r.sku,
+    'Mapping Status':r.mappingStatus,'Matching Type':r.matchingType,'INF Reason':r.infReason,
+    'Mapped ATC URL':r.atcUrl,'Mapped ASIN':r.mappedAsin,'Amazon Price':r.amazonPrice,
+    'Temu Price':r.temuPrice,'Inexact Reason Code':r.inexactCode,
+    'Temu Brand':r.temuBrand,'Amazon Brand':r.amazonBrand,
+    'Temu Seller Name':r.temuSeller,'Warehouse Details':r.warehouse,
+    'FFO':r.ffo,'Shipping Start Date':r.shipStart,'Shipping End Date':r.shipEnd,'Notes':r.notes
+  }));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:6},{wch:50},{wch:20},{wch:14},{wch:14},{wch:14},{wch:50},{wch:18},{wch:14},{wch:12},{wch:22},{wch:20},{wch:20},{wch:20},{wch:16},{wch:20},{wch:16},{wch:16},{wch:24}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Mapped');
+  XLSX.writeFile(wb, `mapflow_export_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Excel file downloaded!','success');
+}
+
+// ── Reset ─────────────────────────────────────────────────────
+function resetAll() {
+  if (!confirm('Reset and load a new file? All unsaved data will be lost.')) return;
+  rows = []; currentFilter = 'all'; currentRowIdx = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('upload-section').style.display = 'flex';
+  document.getElementById('header-stats').style.display = 'none';
+  document.getElementById('export-btn').style.display = 'none';
+  document.getElementById('reset-btn').style.display = 'none';
+  document.getElementById('paste-area').value = '';
+  document.getElementById('file-input').value = '';
+  document.querySelectorAll('.filter-pill').forEach((p,i)=>p.classList.toggle('active',i===0));
+}
+
+// ── Guidelines Panel ──────────────────────────────────────────
+function showGuidelinesPanel() {
+  closePanel();
+  document.getElementById('guidelines-body').innerHTML = guidelinesHTML();
+  document.getElementById('guidelines-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('overlay').onclick = closeGuidelinesPanel;
+}
+function closeGuidelinesPanel() {
+  document.getElementById('guidelines-panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('overlay').onclick = closePanel;
+}
+
+function guidelinesHTML() {
+  const sec = (title, color, content) => `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,rgba(${color},0.1),transparent);">
+        <div style="font-size:11px;font-weight:700;color:rgba(${color},1);text-transform:uppercase;letter-spacing:0.7px;">${title}</div>
+      </div>
+      <div style="padding:10px 14px;font-size:11.5px;color:var(--muted);line-height:1.8;">${content}</div>
+    </div>`;
+
+  return `
+    <div style="background:var(--bg3);border:1px solid rgba(255,98,0,0.2);border-radius:10px;padding:12px 14px;margin-bottom:2px;">
+      <div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.7px;">Nexact IF Priority</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;">
+        <div>
+          <div style="font-weight:600;color:var(--text);margin-bottom:4px;">Finding INX IF</div>
+          <div style="color:var(--muted)">P1: Brand, Color<br/>P2: Size, Material<br/>P3: Spec, Pack, Design</div>
+        </div>
+        <div>
+          <div style="font-weight:600;color:var(--text);margin-bottom:4px;">Giving Reason Code</div>
+          <div style="color:var(--muted)">P1: Spec, Pack, Design<br/>P2: Size, Material<br/>P3: Brand, Color</div>
+        </div>
+      </div>
+    </div>
+
+    ${sec('Softlines — Apparel','255,98,0',`
+      ✓ Gender match (unisex → men/women OK)<br/>
+      ✓ Material, design/pattern, neck type must match<br/>
+      ✓ Product type same (trousers=trousers, LS=LS)<br/>
+      ✓ Pack & bundle match
+    `)}
+    ${sec('Softlines — Shoes','255,98,0',`
+      ✓ Material, toe type, gender match<br/>
+      ✓ Kids: size category same (Toddler=Toddler)<br/>
+      ✓ Special features (waterproof) must match<br/>
+      ✓ Print same (snake=snake)
+    `)}
+    ${sec('Softlines — Jewellery','255,98,0',`
+      ✓ Carat same (14k/18k/22k)<br/>
+      ✓ Gold color: yellow/white/rose must match<br/>
+      ✓ Chain: length same (16"+2"=18")<br/>
+      ✓ Rings: size can mismatch if all specs match
+    `)}
+    ${sec('Hardlines (HL)','59,127,232',`
+      ✓ Brand & Color must match<br/>
+      ✓ Tires: Season must match (winter=winter)<br/>
+      ✓ Musical: Left guitar=Left, Piano keys must match<br/>
+      ✓ Kitchen: cookware type (nonstick=nonstick)
+    `)}
+    ${sec('Consumables','52,216,117',`
+      ✓ Brand & Color match required<br/>
+      ✓ Pack & quantity match (5kg=5kg)<br/>
+      ✓ Flavor, fragrance must match<br/>
+      ✓ Organic/vegan: like-for-like only
+    `)}
+    ${sec('Pack Inexact Logic','112,112,160',`
+      SL: Temu 1 → Amz 3 = <strong style="color:var(--text)">IF (Pack Inexact)</strong><br/>
+      HL: Temu 1 → Amz 3 = <strong style="color:var(--text)">IF (Pack Inexact)</strong><br/>
+      HL: Temu 10 → Amz 3 = <strong style="color:var(--red-lt)">INF (Pack/Bundle mismatch)</strong><br/>
+      Consumables: 1×10kg → 2×10kg = <strong style="color:var(--red-lt)">INF</strong><br/>
+      Consumables: 1×20ml → 2×10ml = <strong style="color:var(--red-lt)">INF</strong>
+    `)}
+    ${sec('Size Inexact','112,112,160',`
+      Apparel/Shoes/Rings: any size = Exact IF<br/>
+      Luggage/Watches/Jewelry: ±10% = Exact IF<br/>
+      >10% = <strong style="color:var(--text)">SIZE INEXACT</strong>
+    `)}
+    ${sec('Design/Pattern Inexact','112,112,160',`
+      Minor diff (sleeve/pocket/side slit) = Exact IF<br/>
+      Different design type (sneaker vs loafer) = INX IF<br/>
+      Different pattern family (plain vs stripe) = INX IF
+    `)}
+    ${sec('URL States','229,62,62',`
+      "Unavailable for purchase" → <strong style="color:var(--red-lt)">Invalid URL</strong><br/>
+      "This item is discontinued" → <strong style="color:var(--red-lt)">Invalid URL</strong><br/>
+      "This item is sold out" → <strong style="color:var(--text)">Comp OOS</strong><br/>
+      Captcha/blocked → try without Cisco VPN, clear cookies
+    `)}
+    ${sec('Brand Rules','255,98,0',`
+      If Temu brand = Generic AND all specs match → Amazon Generic = <strong style="color:var(--green-lt)">Exact IF</strong><br/>
+      Subbrand must be verified against subbrand list
+    `)}
+  `;
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const icons = { success:'✓', error:'✕', info:'↗' };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<div class="toast-icon">${icons[type]||'·'}</div><div class="toast-msg">${msg}</div><button class="toast-close" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('toast-stack').appendChild(t);
+  const delay = type==='info' ? 5000 : 3500;
+  setTimeout(() => { t.classList.add('toast-exit'); setTimeout(()=>t.remove(), 250); }, delay);
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePanel(); closeGuidelinesPanel(); }
+  if (e.key === 'Enter' && e.metaKey && currentRowIdx !== null) saveMapping();
+});
+</script>
+</body>
+</html>
