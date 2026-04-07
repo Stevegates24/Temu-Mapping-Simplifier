@@ -12,7 +12,7 @@ A modern web-based tool to map Temu product listings to Amazon ASINs efficiently
 
 ## 🌐 Live Demo
 
-👉 https://stevegates24.github.io/temu-mapping-dashboard/
+👉 [Temu Mapping Simplifier](https://stevegates24.github.io/Temu-Mapping-Simplifier/)
 
 ## 📦 How to Use
 
