@@ -1,224 +1,309 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script>(function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('mf_theme')||'dark');})();</script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MapFlow · Temu Mapping</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23FF6200'/><text x='16' y='22' text-anchor='middle' font-size='16' fill='white' font-family='Arial'>⇌</text></svg>"/>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
+/* ═══ TOKENS ═══ */
 :root{
-  --or:#FF6200;--olt:#FF8C3A;--odk:#CC4E00;--og:rgba(255,98,0,0.1);
-  --bl:#2563EB;--blt:#60A5FA;
+  --or:#FF6200;--odk:#CC4E00;--olt:#FF8C3A;
   --gn:#16A34A;--glt:#4ADE80;
   --rd:#DC2626;--rlt:#F87171;
-  --bg:#09090E;--b2:#0F0F16;--b3:#15151E;--b4:#1C1C28;--b5:#232333;
-  --bd:rgba(255,255,255,0.06);--bd2:rgba(255,255,255,0.11);--bd3:rgba(255,255,255,0.18);
-  --tx:#EAEAF5;--mt:#5A5A78;--sb:#2A2A3E;
+  --bl:#2563EB;--teal:#2DD4BF;--gold:#FCD34D;
   --fn:'Outfit',sans-serif;--mo:'JetBrains Mono',monospace;
-  --teal:#2DD4BF;--teal-bg:rgba(45,212,191,0.08);--teal-bd:rgba(45,212,191,0.25);
-  --gold:#FCD34D;--gold-bg:rgba(252,211,77,0.08);--gold-bd:rgba(252,211,77,0.25);
 }
+[data-theme="dark"]{
+  --bg:#07070C;--b2:#0D0D15;--b3:#12121C;--b4:#181825;--b5:#1E1E2E;
+  --bd:rgba(255,255,255,0.06);--bd2:rgba(255,255,255,0.11);--bd3:rgba(255,255,255,0.18);
+  --tx:#E6E6F5;--mt:#54547A;--sb:#22223A;
+  --blob1:rgba(255,98,0,0.18);--blob2:rgba(100,50,220,0.09);
+  --hdr-bg:linear-gradient(90deg,#0E0804,#0D0D15);
+  --up-panel:rgba(255,255,255,0.02);
+}
+[data-theme="light"]{
+  --bg:#F0F0FA;--b2:#FFFFFF;--b3:#E8E8F5;--b4:#DCDCF0;--b5:#F4F4FC;
+  --bd:rgba(70,70,130,0.1);--bd2:rgba(70,70,130,0.16);--bd3:rgba(70,70,130,0.25);
+  --tx:#15152A;--mt:#5C5C98;--sb:#B8B8D8;
+  --blob1:rgba(255,98,0,0.07);--blob2:rgba(100,50,220,0.04);
+  --hdr-bg:linear-gradient(90deg,#fff5f0,#FFFFFF);
+  --up-panel:rgba(255,255,255,0.7);
+}
+
+/* ═══ RESET ═══ */
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--fn);background:var(--bg);color:var(--tx);font-size:13px;min-height:100vh;-webkit-font-smoothing:antialiased;}
+html{height:100%;}
+body{font-family:var(--fn);background:var(--bg);color:var(--tx);font-size:13px;height:100%;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s;}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-thumb{background:var(--sb);border-radius:4px;}
 
-/* ── HEADER ── */
-.hdr{background:linear-gradient(135deg,#1a0800,#0c0c12);border-bottom:1px solid var(--bd2);padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;}
-.hdr::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,98,0,0.09),transparent 55%);pointer-events:none;}
-.hlogo{width:30px;height:30px;background:linear-gradient(135deg,var(--or),var(--odk));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 2px 10px rgba(255,98,0,0.4);}
-.htitle{font-size:14.5px;font-weight:800;letter-spacing:-.3px;}
+/* ═══ BLOB ═══ */
+#blob{
+  position:fixed;width:550px;height:550px;border-radius:50%;pointer-events:none;
+  z-index:0;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,var(--blob1) 0%,var(--blob2) 50%,transparent 75%);
+  filter:blur(70px);transition:background .4s;
+}
+
+/* ═══ HEADER ═══ */
+.hdr{
+  position:sticky;top:0;z-index:100;height:50px;
+  background:var(--hdr-bg);
+  border-bottom:1px solid var(--bd2);
+  padding:0 16px;display:flex;align-items:center;gap:10px;
+  transition:background .25s,border-color .25s;
+}
+[data-theme="dark"] .hdr::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,98,0,0.07),transparent 50%);pointer-events:none;}
+.hlogo{width:28px;height:28px;background:var(--or);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;box-shadow:0 2px 12px rgba(255,98,0,0.45);}
+.htitle{font-size:14px;font-weight:800;letter-spacing:-.3px;line-height:1;}
 .htitle span{color:var(--or);}
-.hsub{font-size:9px;color:var(--mt);}
-.mkpl-badge{background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);color:#A78BFA;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:var(--mo);display:none;align-items:center;gap:5px;}
-.hchips{display:flex;gap:5px;margin-left:6px;}
-.hchip{background:var(--b3);border:1px solid var(--bd2);padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;font-family:var(--mo);display:flex;align-items:center;gap:4px;}
-.dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-.hright{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.hsub{font-size:8.5px;color:var(--mt);}
+.hright{margin-left:auto;display:flex;align-items:center;gap:5px;}
+.hchip{background:var(--b3);border:1px solid var(--bd2);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:var(--mo);display:flex;align-items:center;gap:4px;}
+.dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;}
+.theme-btn{width:30px;height:30px;border:1px solid var(--bd2);border-radius:7px;background:var(--b3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
+.theme-btn:hover{background:var(--b4);border-color:var(--bd3);}
 
-/* Mapper ID bar */
-.mapper-bar{background:var(--b3);border-bottom:1px solid var(--bd);padding:7px 16px;display:flex;align-items:center;gap:10px;}
-.mapper-bar label{font-size:10px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;}
-.mapper-input{background:var(--b5);border:1px solid var(--bd2);border-radius:6px;padding:5px 10px;color:var(--tx);font-family:var(--mo);font-size:12px;outline:none;width:160px;transition:border-color .13s;}
-.mapper-input:focus{border-color:var(--or);}
-.mapper-hint{font-size:10px;color:var(--mt);}
-.mapper-hint span{color:var(--or);font-family:var(--mo);}
+/* ═══ MID BAR ═══ */
+.mid-bar{
+  position:sticky;top:50px;z-index:90;
+  background:var(--b2);border-bottom:1px solid var(--bd);
+  padding:6px 14px;display:none;align-items:center;gap:10px;
+  transition:background .25s;
+}
+.mid-bar label{font-size:9px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;}
+.mid-bar input{background:var(--b4);border:1px solid var(--bd2);border-radius:6px;padding:4px 10px;color:var(--tx);font-family:var(--mo);font-size:12px;outline:none;width:150px;transition:border-color .12s;}
+.mid-bar input:focus{border-color:var(--or);}
+.mkpl-pill{background:rgba(124,58,237,.13);border:1px solid rgba(124,58,237,.28);color:#A78BFA;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--mo);}
+.mid-stats{display:flex;gap:5px;margin-left:auto;}
 
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:all .13s;white-space:nowrap;}
-.btn:active{transform:scale(.96);}
+/* ═══ BUTTONS ═══ */
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border:none;border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:all .12s;white-space:nowrap;}
+.btn:active{transform:scale(.95);}
 .btn-sm{padding:4px 10px;font-size:11px;}
-.btn-xs{padding:3px 8px;font-size:10.5px;border-radius:5px;}
-.bor{background:var(--or);color:#fff;box-shadow:0 2px 8px rgba(255,98,0,0.28);}.bor:hover{background:var(--odk);}
-.bbl{background:var(--bl);color:#fff;}.bbl:hover{background:#1d4ed8;}
+.btn-xs{padding:2px 8px;font-size:10.5px;border-radius:5px;}
+.bor{background:var(--or);color:#fff;box-shadow:0 2px 8px rgba(255,98,0,.3);}.bor:hover{background:var(--odk);}
 .bgn{background:var(--gn);color:#fff;}.bgn:hover{background:#15803d;}
 .brd{background:var(--rd);color:#fff;}.brd:hover{background:#b91c1c;}
 .bgh{background:transparent;color:var(--mt);border:1px solid var(--bd2);}.bgh:hover{background:var(--b4);color:var(--tx);}
 .bpu{background:#7C3AED;color:#fff;}.bpu:hover{background:#6d28d9;}
-.btemu{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-bd);font-size:11px;}.btemu:hover{background:rgba(45,212,191,0.18);}
-.bamz{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-bd);font-size:11px;}.bamz:hover{background:rgba(252,211,77,0.18);}
-.blens{background:rgba(167,139,250,0.1);color:#A78BFA;border:1px solid rgba(167,139,250,0.3);font-size:11px;}.blens:hover{background:rgba(167,139,250,0.2);}
+.btemu{background:rgba(45,212,191,.1);color:var(--teal);border:1px solid rgba(45,212,191,.25);}.btemu:hover{background:rgba(45,212,191,.18);}
+.bamz{background:rgba(252,211,77,.1);color:var(--gold);border:1px solid rgba(252,211,77,.25);}.bamz:hover{background:rgba(252,211,77,.18);}
+.blens{background:rgba(59,130,246,.1);color:#93C5FD;border:1px solid rgba(59,130,246,.25);}.blens:hover{background:rgba(59,130,246,.18);}
+.bundo{background:rgba(220,38,38,.1);color:var(--rlt);border:1px solid rgba(220,38,38,.22);}.bundo:hover{background:rgba(220,38,38,.18);}
+.bnext{background:rgba(37,99,235,.12);color:#93C5FD;border:1px solid rgba(37,99,235,.25);}.bnext:hover{background:rgba(37,99,235,.22);}
 
-/* ── MAIN ── */
-.main{max-width:100%;padding:10px 12px;}
+/* ═══ UPLOAD PAGE (full-screen split) ═══ */
+#uppage{
+  position:fixed;top:50px;left:0;right:0;bottom:0;
+  z-index:50;display:flex;flex-direction:column;
+  background:var(--bg);transition:background .25s;
+}
+.sban{
+  background:rgba(37,99,235,.07);border-bottom:1px solid rgba(37,99,235,.2);
+  padding:9px 20px;display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;flex-shrink:0;
+}
+.up-panels{flex:1;display:flex;overflow:hidden;}
 
-/* ── UPLOAD ── */
-.uppage{display:flex;flex-direction:column;align-items:center;padding:44px 14px 24px;gap:14px;}
-.uph1{font-size:24px;font-weight:800;letter-spacing:-.7px;line-height:1.15;margin-bottom:6px;}
-.uph1 em{font-style:normal;background:linear-gradient(135deg,var(--or),#FFB347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.upsub{color:var(--mt);font-size:12.5px;line-height:1.7;text-align:center;max-width:400px;margin-bottom:4px;}
-.upcards{display:flex;gap:12px;width:100%;max-width:640px;flex-wrap:wrap;}
-.upcard{flex:1;min-width:240px;background:var(--b2);border:2px solid var(--bd2);border-radius:13px;padding:22px 16px;text-align:center;cursor:pointer;transition:all .17s;position:relative;overflow:hidden;}
-.upcard:hover,.upcard.drag{border-color:rgba(255,98,0,0.4);background:rgba(255,98,0,0.03);transform:translateY(-2px);}
-.upcard input{position:absolute;inset:0;opacity:0;cursor:pointer;}
-.upcard-ico{width:44px;height:44px;border-radius:11px;margin:0 auto 10px;background:var(--b3);border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:20px;}
-.upcard h3{font-size:13px;font-weight:700;margin-bottom:4px;}
-.upcard p{font-size:10.5px;color:var(--mt);line-height:1.6;margin-bottom:10px;}
-.fmt{padding:1px 5px;border-radius:3px;background:var(--b4);border:1px solid var(--bd);font-size:9px;font-family:var(--mo);color:var(--mt);}
-.divOR{display:flex;align-items:center;gap:9px;width:100%;max-width:640px;color:var(--mt);font-size:10.5px;font-weight:600;letter-spacing:.5px;}
-.divOR::before,.divOR::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--bd2),transparent);}
-.sbanner{background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:9px 12px;width:100%;max-width:640px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;}
+/* Split panels */
+.up-panel{
+  flex:1;position:relative;overflow:hidden;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:flex .48s cubic-bezier(.34,1.4,.64,1),box-shadow .3s;
+  background:var(--up-panel);
+}
+.up-panel::before{
+  content:'';position:absolute;width:360px;height:360px;border-radius:50%;
+  top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+  transition:transform .5s cubic-bezier(.34,1.4,.64,1);pointer-events:none;
+}
+.up-excel::before{background:radial-gradient(circle,rgba(255,98,0,.14) 0%,transparent 70%);}
+.up-paste::before{background:radial-gradient(circle,rgba(45,212,191,.12) 0%,transparent 70%);}
+.up-panel.panel-grow{flex:1.7;}
+.up-panel.panel-grow::before{transform:translate(-50%,-50%) scale(1);}
+.up-panel.panel-shrink{flex:.7;}
+.up-excel.panel-grow{box-shadow:inset 4px 0 0 var(--or);}
+.up-paste.panel-grow{box-shadow:inset -4px 0 0 var(--teal);}
+[data-theme="light"] .up-excel.panel-grow{background:rgba(255,98,0,.04);}
+[data-theme="light"] .up-paste.panel-grow{background:rgba(45,212,191,.04);}
+.up-excel{border-right:1px solid var(--bd2);}
 
-/* ── PROGRESS ── */
-.progwrap{margin-bottom:8px;display:flex;gap:10px;align-items:center;}
-.proginf{flex:1;}
-.progbar{height:3px;background:var(--b4);border-radius:4px;overflow:hidden;margin-bottom:3px;}
-.progfill{height:100%;background:linear-gradient(90deg,var(--or),var(--olt));border-radius:4px;transition:width .4s ease;}
-.progmeta{display:flex;justify-content:space-between;font-size:10px;color:var(--mt);}
-.progstats{display:flex;gap:5px;}
-.pstat{background:var(--b3);border:1px solid var(--bd);border-radius:6px;padding:4px 8px;text-align:center;min-width:44px;}
-.pstat-n{font-size:15px;font-weight:800;line-height:1;font-family:var(--mo);}
-.pstat-l{font-size:8px;color:var(--mt);text-transform:uppercase;letter-spacing:.4px;margin-top:1px;}
+.up-sep{
+  width:1px;background:var(--bd2);position:relative;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.up-sep::after{
+  content:'OR';position:absolute;
+  background:var(--bg);padding:10px 5px;
+  font-size:8.5px;font-weight:700;color:var(--mt);letter-spacing:1px;
+  border:1px solid var(--bd2);border-radius:20px;
+  writing-mode:vertical-rl;transition:background .25s;
+}
+.up-content{
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  text-align:center;max-width:320px;padding:28px;z-index:1;
+  transition:transform .45s cubic-bezier(.34,1.2,.64,1);
+}
+.up-panel.panel-grow .up-content{transform:scale(1.04);}
+.up-panel.panel-shrink .up-content{transform:scale(.94);opacity:.7;}
+.up-ico-wrap{
+  width:80px;height:80px;border-radius:22px;
+  background:var(--b3);border:1px solid var(--bd2);
+  display:flex;align-items:center;justify-content:center;font-size:34px;
+  transition:all .4s cubic-bezier(.34,1.4,.64,1);
+}
+.up-excel.panel-grow .up-ico-wrap{background:rgba(255,98,0,.12);border-color:rgba(255,98,0,.3);box-shadow:0 10px 36px rgba(255,98,0,.2);transform:scale(1.1);}
+.up-paste.panel-grow .up-ico-wrap{background:rgba(45,212,191,.12);border-color:rgba(45,212,191,.3);box-shadow:0 10px 36px rgba(45,212,191,.18);transform:scale(1.1);}
+.up-h{font-size:26px;font-weight:800;letter-spacing:-.6px;transition:color .3s;}
+.up-excel.panel-grow .up-h{color:var(--or);}
+.up-paste.panel-grow .up-h{color:var(--teal);}
+.up-p{font-size:12px;color:var(--mt);line-height:1.7;}
+.fmt-row{display:flex;gap:4px;justify-content:center;}
+.fmt{padding:2px 6px;border-radius:3px;background:var(--b4);border:1px solid var(--bd2);font-size:9px;font-family:var(--mo);color:var(--mt);}
+.up-hint{font-size:10px;color:var(--mt);opacity:0;transition:opacity .3s;margin-top:-4px;}
+.up-excel.panel-grow .up-hint{opacity:1;}
+.up-finput{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:3;}
+.up-panel.drag{border:2px dashed var(--or)!important;background:rgba(255,98,0,.04)!important;}
+.up-paste-inner{width:100%;display:flex;flex-direction:column;gap:7px;}
+.up-paste-inner textarea{
+  width:100%;background:var(--bg);border:1px solid var(--bd2);
+  border-radius:7px;padding:9px 11px;color:var(--tx);
+  font-family:var(--mo);font-size:10px;resize:none;height:82px;
+  outline:none;line-height:1.65;transition:border-color .12s;
+}
+.up-paste-inner textarea:focus{border-color:var(--or);}
+.up-paste-inner textarea::placeholder{color:var(--mt);}
 
-/* ── TOOLBAR ── */
+/* ═══ MAIN (dashboard) ═══ */
+.main-wrap{padding:10px 10px;}
+/* PROGRESS */
+.progrow{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.progbar{flex:1;height:4px;background:var(--b4);border-radius:4px;overflow:hidden;}
+.progfill{height:100%;background:linear-gradient(90deg,var(--or),var(--olt));border-radius:4px;transition:width .45s cubic-bezier(.25,1,.5,1);}
+.progmeta{font-size:10px;color:var(--mt);white-space:nowrap;}
+.pstats{display:flex;gap:5px;}
+.pstat{background:var(--b2);border:1px solid var(--bd);border-radius:7px;padding:4px 10px;text-align:center;min-width:50px;}
+.pstat b{display:block;font-size:16px;font-weight:800;font-family:var(--mo);line-height:1.1;}
+/* TOOLBAR */
 .toolbar{display:flex;align-items:center;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
-.sbox{background:var(--b3);border:1px solid var(--bd2);border-radius:6px;padding:4px 9px;display:flex;align-items:center;gap:5px;min-width:180px;}
+.sbox{background:var(--b2);border:1px solid var(--bd2);border-radius:6px;padding:4px 9px;display:flex;align-items:center;gap:5px;min-width:190px;}
 .sbox input{background:none;border:none;outline:none;color:var(--tx);font-size:11.5px;width:100%;font-family:var(--fn);}
 .sbox input::placeholder{color:var(--mt);}
 .ftabs{display:flex;gap:2px;background:var(--b3);padding:2px;border-radius:6px;border:1px solid var(--bd);}
-.ft{padding:3px 8px;border-radius:4px;border:none;background:transparent;color:var(--mt);font-size:10.5px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:all .12s;}
+.ft{padding:3px 8px;border-radius:4px;border:none;background:transparent;color:var(--mt);font-size:10.5px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:all .1s;}
 .ft.act{background:var(--or);color:#fff;}
 .tright{margin-left:auto;display:flex;gap:4px;}
-
-/* ── TABLE ── */
-.tcard{background:var(--b2);border:1px solid var(--bd);border-radius:11px;overflow:hidden;}
+/* TABLE */
+.tcard{background:var(--b2);border:1px solid var(--bd);border-radius:10px;overflow:hidden;}
 .tscroll{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:11.5px;}
-thead th{padding:7px 9px;text-align:left;font-size:9px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--bd2);background:var(--b3);white-space:nowrap;position:sticky;top:0;z-index:5;}
+thead th{padding:7px 9px;text-align:left;font-size:8.5px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--bd2);background:var(--b3);white-space:nowrap;}
 tbody td{padding:6px 9px;border-bottom:1px solid var(--bd);vertical-align:middle;}
-.main-row:hover td{background:rgba(255,255,255,0.012);}
-.main-row.rdone td{opacity:.5;}
-.main-row.ropen td{background:rgba(255,98,0,0.03)!important;}
-.rn{color:var(--mt);font-family:var(--mo);font-size:9.5px;width:26px;}
-.mtag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:700;font-family:var(--mo);background:rgba(124,58,237,.13);color:#A78BFA;border:1px solid rgba(124,58,237,.2);}
-.urltd{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mo);font-size:10px;color:var(--mt);}
+.main-row:hover td{background:rgba(255,255,255,.012);}
+.main-row.rdone td{opacity:.45;}
+.main-row.ropen td{background:rgba(255,98,0,.025)!important;}
+.rn{color:var(--mt);font-family:var(--mo);font-size:9.5px;width:24px;}
+.urltd{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mo);font-size:10px;color:var(--mt);}
 .dim{color:var(--sb);}
-.sbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:9.5px;font-weight:600;white-space:nowrap;}
-.sp{background:rgba(90,90,120,.14);color:var(--mt);border:1px solid rgba(90,90,120,.18);}
-.so{background:rgba(255,98,0,.1);color:var(--olt);border:1px solid rgba(255,98,0,.2);}
-.sd{background:rgba(22,163,74,.1);color:var(--glt);border:1px solid rgba(22,163,74,.2);}
-.si{background:rgba(220,38,38,.1);color:var(--rlt);border:1px solid rgba(220,38,38,.2);}
-.sk{background:rgba(234,179,8,.1);color:#fde047;border:1px solid rgba(234,179,8,.2);}
-.acts{display:flex;gap:3px;align-items:center;}
-
-/* ── EXPAND ROW ── */
+.sbadge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:9.5px;font-weight:600;white-space:nowrap;}
+.sp{background:rgba(84,84,122,.12);color:var(--mt);border:1px solid rgba(84,84,122,.18);}
+.so{background:rgba(255,98,0,.09);color:var(--olt);border:1px solid rgba(255,98,0,.18);}
+.sd{background:rgba(22,163,74,.09);color:var(--glt);border:1px solid rgba(22,163,74,.18);}
+.si{background:rgba(220,38,38,.09);color:var(--rlt);border:1px solid rgba(220,38,38,.18);}
+.sk{background:rgba(234,179,8,.09);color:#fde047;border:1px solid rgba(234,179,8,.18);}
+.acts{display:flex;gap:2px;align-items:center;}
+.mtag-sm{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:var(--mo);background:rgba(124,58,237,.12);color:#A78BFA;border:1px solid rgba(124,58,237,.2);}
+/* EXPAND ROW */
 .expand-row{display:none;}
 .expand-row.open{display:table-row;}
-.expand-row td{padding:0;border-bottom:1px solid var(--bd2);}
-.exp-inner{background:var(--b3);border-top:2px solid var(--or);padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
-
-/* Expand header */
-.exp-hdr{display:flex;align-items:center;gap:8px;}
-.exp-url{font-family:var(--mo);font-size:10px;color:var(--mt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-
-/* ── SCRAPER SECTION ── */
-.scraper-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.scraper-btn-block{display:flex;flex-direction:column;gap:4px;}
-.scraper-lbl{font-size:8px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.7px;}
-.scraper-applied{font-size:9px;color:var(--glt);min-height:11px;font-family:var(--mo);}
-.sdivider{width:1px;height:36px;background:var(--bd2);margin:0 4px;}
-.lens-btn-block{display:flex;flex-direction:column;gap:3px;margin-left:auto;}
-
-/* ── FIELDS GRID (clean 4-col) ── */
-.fields-section{display:flex;flex-direction:column;gap:8px;}
-.fields-row{display:flex;gap:8px;flex-wrap:wrap;}
-.fld{display:flex;flex-direction:column;gap:3px;flex:1;min-width:140px;}
-.fld.wide{min-width:260px;flex:2;}
-.fld.narrow{min-width:110px;flex:0 0 auto;}
-.flbl{font-size:8px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;}
-.fin{width:100%;background:var(--b5);border:1px solid var(--bd2);border-radius:5px;padding:5px 8px;color:var(--tx);font-family:var(--fn);font-size:11.5px;outline:none;transition:border-color .13s;}
-.fin:focus{border-color:var(--or);box-shadow:0 0 0 2px rgba(255,98,0,0.08);}
+.expand-row td{padding:0;border-bottom:2px solid var(--bd2);}
+.ei{
+  background:var(--b3);border-top:2px solid var(--or);
+  padding:14px 16px;display:flex;flex-direction:column;gap:10px;
+  animation:expandIn .22s cubic-bezier(.25,1,.5,1);
+}
+@keyframes expandIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+/* Sections */
+.ei-sec{background:var(--b4);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+.ei-sec-hd{font-size:8px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.ei-sec-hd::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,98,0,.25),transparent);}
+/* Fields grid */
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:6px;}
+.fg.atcrow{grid-template-columns:1fr;}
+.fld{display:flex;flex-direction:column;gap:3px;}
+.flbl{font-size:8px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;}
+.fin{width:100%;background:var(--b5);border:1px solid var(--bd2);border-radius:5px;padding:5px 8px;color:var(--tx);font-family:var(--fn);font-size:11.5px;outline:none;transition:border-color .12s,box-shadow .12s;}
+.fin:focus{border-color:var(--or);box-shadow:0 0 0 2px rgba(255,98,0,.1);}
 .fin::placeholder{color:var(--sb);}
-.fsel{width:100%;background:var(--b5);border:1px solid var(--bd2);border-radius:5px;padding:5px 8px;color:var(--tx);font-family:var(--fn);font-size:11.5px;outline:none;cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235A5A78' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px;transition:border-color .13s;}
+.fsel{width:100%;background:var(--b5);border:1px solid var(--bd2);border-radius:5px;padding:5px 8px;color:var(--tx);font-family:var(--fn);font-size:11.5px;outline:none;cursor:pointer;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2354547A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:22px;transition:border-color .12s;}
 .fsel:focus{border-color:var(--or);outline:none;}
 .fsel option{background:var(--b3);}
-
-/* Y/N toggle buttons */
-.yn-btns{display:flex;gap:3px;}
-.yn-btn{padding:4px 12px;border-radius:5px;border:1px solid var(--bd2);background:var(--b5);color:var(--mt);font-size:11.5px;font-weight:700;cursor:pointer;font-family:var(--mo);transition:all .13s;line-height:1;}
+.fsel:disabled{opacity:.4;cursor:not-allowed;}
+/* Y/N toggle */
+.yn{display:flex;gap:2px;}
+.yn-btn{padding:4px 11px;border-radius:4px;border:1px solid var(--bd2);background:var(--b5);color:var(--mt);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fn);transition:all .1s;line-height:1;}
 .yn-btn:hover{border-color:var(--bd3);color:var(--tx);}
-.yn-btn.sel-Y{background:rgba(22,163,74,.18);color:var(--glt);border-color:rgba(22,163,74,.35);}
-.yn-btn.sel-N{background:rgba(220,38,38,.12);color:var(--rlt);border-color:rgba(220,38,38,.28);}
-
-/* Status dropdown color coding */
-.fsel.ms-IF{border-color:rgba(22,163,74,.3);color:var(--glt);}
-.fsel.ms-INF{border-color:rgba(220,38,38,.3);color:var(--rlt);}
-.fsel.ms-INVALID{border-color:rgba(234,179,8,.3);color:#fde047;}
-
-/* ── EXP ACTIONS ── */
-.exp-actions{display:flex;gap:6px;align-items:center;padding-top:6px;border-top:1px solid var(--bd);}
-.mapper-tag{font-size:9px;color:var(--mt);font-family:var(--mo);margin-left:auto;background:var(--b4);padding:2px 8px;border-radius:4px;border:1px solid var(--bd);}
-
-/* ── GUIDELINES PANEL ── */
-.gpanel{position:fixed;right:0;top:0;bottom:0;width:390px;background:var(--b2);border-left:1px solid var(--bd2);z-index:300;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;}
+.yn-y.on{background:rgba(22,163,74,.15);color:var(--glt);border-color:rgba(22,163,74,.3);}
+.yn-n.on{background:rgba(220,38,38,.12);color:var(--rlt);border-color:rgba(220,38,38,.25);}
+/* Expand actions */
+.ei-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap;padding-top:2px;}
+/* GUIDELINES */
+.gpanel{position:fixed;right:0;top:0;bottom:0;width:380px;background:var(--b2);border-left:1px solid var(--bd2);z-index:200;transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;}
 .gpanel.open{transform:translateX(0);}
-.phdr{padding:11px 13px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;flex-shrink:0;background:linear-gradient(180deg,var(--b3),var(--b2));}
-.phico{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--or),var(--odk));display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-.phtitle{font-size:13px;font-weight:800;flex:1;}
-.pclose{background:var(--b4);border:1px solid var(--bd);color:var(--mt);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:13px;transition:all .12s;line-height:1;}
-.pclose:hover{color:var(--tx);}
+.gphdr{padding:10px 13px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px;background:var(--b3);}
+.gphico{width:26px;height:26px;border-radius:6px;background:var(--or);display:flex;align-items:center;justify-content:center;font-size:12px;}
+.gptitle{font-size:12.5px;font-weight:800;flex:1;}
+.gpclose{background:var(--b4);border:1px solid var(--bd);color:var(--mt);border-radius:4px;padding:2px 7px;cursor:pointer;font-size:13px;line-height:1;}
+.gpclose:hover{color:var(--tx);}
 .gpbody{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
-.gtab-row{display:flex;gap:3px;flex-wrap:wrap;}
-.gtab{padding:3px 9px;border-radius:5px;border:1px solid var(--bd2);background:transparent;color:var(--mt);font-size:10.5px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:all .12s;}
+.gtabs{display:flex;gap:3px;flex-wrap:wrap;}
+.gtab{padding:3px 9px;border-radius:4px;border:1px solid var(--bd2);background:transparent;color:var(--mt);font-size:10.5px;font-weight:600;cursor:pointer;font-family:var(--fn);transition:all .1s;}
 .gtab.act{background:var(--or);color:#fff;border-color:var(--or);}
-.gprio{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:2px;}
+.gprio{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 .gprio-col{background:var(--b3);border:1px solid var(--bd);border-radius:7px;padding:8px 10px;}
 .gprio-hd{font-size:8.5px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;}
-.gprio-row{display:flex;align-items:center;gap:5px;font-size:10.5px;padding:2px 0;color:var(--mt);}
-.pnum{width:14px;height:14px;border-radius:50%;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
+.gprio-r{display:flex;align-items:center;gap:5px;font-size:10.5px;padding:2px 0;color:var(--mt);}
+.pnum{width:14px;height:14px;border-radius:50%;font-size:7.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;}
 .pn1{background:var(--or);}.pn2{background:var(--mt);}.pn3{background:var(--sb);}
 .grule{background:var(--b3);border:1px solid var(--bd);border-radius:7px;overflow:hidden;}
-.grule-hd{padding:7px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;transition:background .12s;}
+.grule-hd{padding:7px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;transition:background .1s;}
 .grule-hd:hover{background:var(--b4);}
-.gtag{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:2px 5px;border-radius:3px;white-space:nowrap;}
+.gtag{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 5px;border-radius:3px;white-space:nowrap;}
 .grule-title{font-size:11.5px;font-weight:700;flex:1;}
-.chev{color:var(--mt);font-size:9px;transition:transform .17s;}
+.chev{color:var(--mt);font-size:9px;transition:transform .15s;}
 .grule.gopen .chev{transform:rotate(90deg);}
-.grule-body{display:none;padding:2px 10px 9px;font-size:10.5px;color:var(--mt);line-height:1.75;}
+.grule-body{display:none;padding:3px 10px 10px;font-size:10.5px;color:var(--mt);line-height:1.75;}
 .grule.gopen .grule-body{display:block;}
 .grule-body strong{color:var(--tx);}
 .gi{display:flex;gap:5px;padding:1px 0;}
-.gi::before{content:'•';color:var(--or);flex-shrink:0;margin-top:2px;font-size:9px;}
-.gnote{background:rgba(255,98,0,0.06);border-left:2px solid var(--or);padding:5px 8px;border-radius:0 5px 5px 0;margin-top:5px;font-size:10px;}
-kbd{display:inline-block;background:var(--b4);border:1px solid var(--bd2);border-radius:3px;padding:0 4px;font-size:8.5px;font-family:var(--mo);color:var(--mt);}
-
-/* ── OVERLAY ── */
-.ovl{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);z-index:250;opacity:0;pointer-events:none;transition:opacity .2s;}
+.gi::before{content:'•';color:var(--or);flex-shrink:0;margin-top:2px;}
+.gnote{background:rgba(255,98,0,.06);border-left:2px solid var(--or);padding:5px 8px;border-radius:0 5px 5px 0;margin-top:4px;font-size:10px;}
+/* OVL */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(2px);z-index:150;opacity:0;pointer-events:none;transition:opacity .18s;}
 .ovl.show{opacity:1;pointer-events:all;}
-
-/* ── TOAST ── */
-.toasts{position:fixed;bottom:14px;right:14px;z-index:999;display:flex;flex-direction:column;gap:4px;pointer-events:none;}
-.toast{background:var(--b3);border:1px solid var(--bd2);border-radius:8px;padding:7px 12px;font-size:11.5px;max-width:270px;animation:tin .18s ease;display:flex;align-items:center;gap:6px;pointer-events:all;transition:opacity .3s;}
-.tok{border-color:rgba(22,163,74,.35);background:rgba(22,163,74,.07);}
-.terr{border-color:rgba(220,38,38,.35);background:rgba(220,38,38,.07);}
-.tinfo{border-color:rgba(37,99,235,.3);background:rgba(37,99,235,.06);}
+/* TOAST */
+.toasts{position:fixed;bottom:14px;right:14px;z-index:999;display:flex;flex-direction:column;gap:4px;}
+.toast{background:var(--b2);border:1px solid var(--bd2);border-radius:8px;padding:7px 12px;font-size:11.5px;max-width:270px;animation:tin .17s ease;display:flex;align-items:center;gap:6px;transition:opacity .3s;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+.tok{border-color:rgba(22,163,74,.3);background:rgba(22,163,74,.07);}
+.terr{border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
+.tinfo{border-color:rgba(37,99,235,.28);background:rgba(37,99,235,.06);}
 @keyframes tin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-
-.instbar{background:var(--b3);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;margin-bottom:8px;font-size:10.5px;color:var(--mt);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.instbar strong{color:var(--tx);}
-.istep{display:flex;align-items:center;gap:4px;}
-.inum{width:15px;height:15px;border-radius:50%;background:var(--or);color:#fff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+/* LIGHT overrides */
+[data-theme="light"] .hdr{box-shadow:0 1px 0 var(--bd);}
+[data-theme="light"] .ei{background:#EEEEF8;}
+[data-theme="light"] .ei-sec{background:#E6E6F4;}
+[data-theme="light"] .fin,[data-theme="light"] .fsel{background:#FFFFFF;color:var(--tx);}
+[data-theme="light"] .fsel option{background:#FFFFFF;}
+[data-theme="light"] .tcard,[data-theme="light"] .pstat{background:#FFFFFF;}
+[data-theme="light"] .gpanel{background:#FFFFFF;}
+[data-theme="light"] .grule{background:#F4F4FA;}
+[data-theme="light"] .grule-hd:hover{background:#EAEAF4;}
+[data-theme="light"] .gprio-col{background:#EEEEF8;}
+[data-theme="light"] .toast{box-shadow:0 4px 20px rgba(0,0,0,.1);}
 </style>
 </head>
 <body>
@@ -226,140 +311,127 @@ kbd{display:inline-block;background:var(--b4);border:1px solid var(--bd2);border
 <!-- HEADER -->
 <header class="hdr">
   <div class="hlogo">⇌</div>
-  <div>
-    <div class="htitle">Map<span>Flow</span></div>
-    <div class="hsub">Temu → Amazon Mapping</div>
-  </div>
-  <div class="mkpl-badge" id="mkpl-display" style="display:none">
-    <span style="font-size:8.5px;color:rgba(167,139,250,0.6);text-transform:uppercase;letter-spacing:.5px">MKPL</span>
-    <span id="mkpl-val">—</span>
-  </div>
-  <div class="hchips" id="hchips" style="display:none">
-    <div class="hchip"><span class="dot" style="background:var(--mt)"></span><span id="s-tot">0</span></div>
-    <div class="hchip"><span class="dot" style="background:var(--glt);box-shadow:0 0 4px var(--glt)"></span><span id="s-dn" style="color:var(--glt)">0</span> Done</div>
-    <div class="hchip"><span class="dot" style="background:var(--olt)"></span><span id="s-pd" style="color:var(--olt)">0</span> Left</div>
-    <div class="hchip"><span class="dot" style="background:var(--rlt)"></span><span id="s-if" style="color:var(--rlt)">0</span> INF</div>
-  </div>
+  <div><div class="htitle">Map<span>Flow</span></div><div class="hsub">Temu → Amazon · by Steve Gates</div></div>
   <div class="hright">
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">☀️</button>
     <button class="btn bpu btn-sm" onclick="saveSession()">💾 Save</button>
     <button class="btn bgn btn-sm" id="expbtn" onclick="exportExcel()" style="display:none">⬇ Export</button>
-    <button class="btn bgh btn-sm" onclick="openGuidelines()">📋 Guide</button>
+    <button class="btn bgh btn-sm" onclick="openGuidelines()">📋 Guidelines</button>
   </div>
 </header>
 
 <!-- MAPPER ID BAR -->
-<div class="mapper-bar">
+<div class="mid-bar" id="mid-bar">
   <label>Mapper ID</label>
-  <input class="mapper-input" id="mapper-id-input" placeholder="e.g. steveit" value=" " oninput="saveMapperID(this.value)"/>
-  <!--<div class="mapper-hint">Output: <span id="fname-preview">steveit_apr_08</span></div>-->
+  <input type="text" id="mapper-id" value="steveit" placeholder="e.g. steveit" oninput="autoSave()"/>
+  <div class="mkpl-pill" id="mkpl-pill" style="display:none"></div>
+  <div class="mid-stats">
+    <div class="hchip"><span class="dot" style="background:var(--mt)"></span><span id="s-tot">0</span></div>
+    <div class="hchip"><span class="dot" style="background:var(--glt);box-shadow:0 0 4px var(--glt)"></span><span id="s-dn" style="color:var(--glt)">0</span> Done</div>
+    <div class="hchip"><span class="dot" style="background:var(--olt);box-shadow:0 0 4px var(--olt)"></span><span id="s-pd" style="color:var(--olt)">0</span> Left</div>
+    <div class="hchip"><span class="dot" style="background:var(--rlt);box-shadow:0 0 4px var(--rlt)"></span><span id="s-if" style="color:var(--rlt)">0</span> INF</div>
+  </div>
 </div>
 
+<!-- GRADIENT BLOB 
+<div id="blob"></div>-->
+
+<!-- OVERLAY -->
 <div class="ovl" id="ovl" onclick="closeGuidelines()"></div>
 
-<div class="main">
-
-<!-- ═══ UPLOAD ═══ -->
+<!-- ════ UPLOAD PAGE ════ -->
 <div id="uppage">
-  <div class="uppage">
-    <div class="sbanner" id="sban" style="display:none">
-      <div>💾 <strong id="sinfo" style="color:var(--blt)">Session found</strong> — restore previous work?</div>
-      <div style="display:flex;gap:5px">
-        <button class="btn bbl btn-sm" onclick="restoreSession()">Restore</button>
-        <button class="btn bgh btn-sm" onclick="clearSession()">Discard</button>
+  <div class="sban" id="sban" style="display:none">
+    <span>💾 <strong id="sinfo" style="color:#93C5FD">Session found</strong> — restore your work?</span>
+    <div style="display:flex;gap:5px">
+      <button class="btn btn-sm" style="background:var(--bl);color:#fff" onclick="restoreSession()">Restore</button>
+      <button class="btn bgh btn-sm" onclick="clearSession()">Discard</button>
+    </div>
+  </div>
+
+  <div class="up-panels" id="up-panels">
+    <!-- Excel panel -->
+    <div class="up-panel up-excel" id="up-excel">
+      <input type="file" class="up-finput" id="finput" accept=".xlsx,.xls,.csv" onchange="handleFile(event)"/>
+      <div class="up-content">
+        <div class="up-ico-wrap">📊</div>
+        <h2 class="up-h">Upload Excel</h2>
+        <p class="up-p">Drop your batch .xlsx file<br/>Needs a <strong style="color:var(--or)">PRODUCT URL</strong> column</p>
+        <div class="fmt-row"><span class="fmt">.xlsx</span><span class="fmt">.xls</span><span class="fmt">.csv</span></div>
+        <div class="up-hint">drag & drop anywhere here</div>
       </div>
     </div>
-    <div style="text-align:center">
-      <div style="display:inline-flex;align-items:center;gap:6px;background:var(--og);border:1px solid rgba(255,98,0,.22);color:var(--olt);padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px;margin-bottom:12px;">🛍️ Temu × Amazon Mapping Tool</div>
-      <div class="uph1">Smart Mapping, <em>Simplified</em></div>
-      <div class="upsub">Upload your batch Excel or paste Temu links to start mapping.</div>
-    </div>
-    <div class="upcards">
-      <div class="upcard" id="upzone">
-        <input type="file" id="finput" accept=".xlsx,.xls,.csv" onchange="handleFile(event)"/>
-        <div class="upcard-ico">📊</div>
-        <h3>Upload Batch File</h3>
-        <p>Drop your Excel with Temu URLs. Needs a <strong style="color:var(--or)">PRODUCT URL</strong> column.</p>
-        <div style="display:flex;gap:3px;justify-content:center;margin-bottom:12px"><span class="fmt">.xlsx</span><span class="fmt">.xls</span><span class="fmt">.csv</span></div>
-        <span class="btn bor btn-sm" style="pointer-events:none">↑ Choose File</span>
-      </div>
-      <div class="upcard" style="cursor:default">
-        <div class="upcard-ico">🔗</div>
-        <h3>Paste Links</h3>
-        <p>Paste Temu URLs — one per line.</p>
-        <textarea id="parea" onclick="event.stopPropagation()" onfocus="this.style.borderColor='var(--or)'" onblur="this.style.borderColor='var(--bd2)'" placeholder="https://www.temu.com/de-en/product-g-601..." style="width:100%;background:var(--bg);border:1px solid var(--bd2);border-radius:6px;padding:7px 9px;color:var(--tx);font-family:var(--mo);font-size:10px;resize:none;height:64px;outline:none;line-height:1.65;transition:border-color .13s;"></textarea>
-        <div style="display:flex;gap:4px;margin-top:6px;justify-content:flex-end">
-          <button class="btn bgh btn-sm" onclick="event.stopPropagation();document.getElementById('parea').value=''">Clear</button>
-          <button class="btn bor btn-sm" onclick="event.stopPropagation();loadPaste()">Load →</button>
+
+    <div class="up-sep"></div>
+
+    <!-- Paste panel -->
+    <div class="up-panel up-paste" id="up-paste" style="cursor:default">
+      <div class="up-content">
+        <div class="up-ico-wrap">🔗</div>
+        <h2 class="up-h">Paste URLs</h2>
+        <p class="up-p">One Temu link per line<br/>for quick ad-hoc sessions</p>
+        <div class="up-paste-inner" onclick="event.stopPropagation()">
+          <textarea id="parea" placeholder="https://www.temu.com/de-en/product-g-601...&#10;https://www.temu.com/de-en/another-g-601..." onfocus="this.style.borderColor='var(--or)'" onblur="this.style.borderColor='var(--bd2)'"></textarea>
+          <div style="display:flex;gap:5px;justify-content:flex-end">
+            <button class="btn bgh btn-sm" onclick="document.getElementById('parea').value=''">Clear</button>
+            <button class="btn bor btn-sm" onclick="loadPaste()">Load Links →</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ DASHBOARD ═══ -->
-<div id="dash" style="display:none">
-
-  <div class="instbar">
-    <strong>Workflow:</strong>
-    <span class="istep"><span class="inum">1</span>Click 🔗 open Temu · Run scraper</span>
-    <span class="istep"><span class="inum">2</span>Expand row · Paste scraper data · Fill fields</span>
-    <span class="istep"><span class="inum">3</span>Save Done / INF · Export when finished</span>
-    <span style="margin-left:auto;font-size:9.5px"><kbd>Esc</kbd> Collapse</span>
-  </div>
-
-  <div class="progwrap">
-    <div class="proginf">
+<!-- ════ DASHBOARD ════ -->
+<div class="main-wrap">
+  <div id="dash" style="display:none">
+    <div class="progrow">
       <div class="progbar"><div class="progfill" id="pfill" style="width:0%"></div></div>
-      <div class="progmeta"><span id="ptxt">0 of 0 completed</span><span id="ppct" style="color:var(--or);font-weight:700">0%</span></div>
+      <div class="progmeta"><span id="ptxt">0 / 0</span> &nbsp;<span id="ppct" style="color:var(--or);font-weight:700">0%</span></div>
+      <div class="pstats">
+        <div class="pstat"><b id="ps-dn" style="color:var(--glt)">0</b>Done</div>
+        <div class="pstat"><b id="ps-pd" style="color:var(--olt)">0</b>Left</div>
+        <div class="pstat"><b id="ps-if" style="color:var(--rlt)">0</b>INF</div>
+      </div>
     </div>
-    <div class="progstats">
-      <div class="pstat"><div class="pstat-n" id="ps-dn" style="color:var(--glt)">0</div><div class="pstat-l">Done</div></div>
-      <div class="pstat"><div class="pstat-n" id="ps-pd" style="color:var(--olt)">0</div><div class="pstat-l">Pending</div></div>
-      <div class="pstat"><div class="pstat-n" id="ps-if" style="color:var(--rlt)">0</div><div class="pstat-l">INF</div></div>
+    <div class="toolbar">
+      <div class="sbox">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="srch" placeholder="Search URL, ASIN, brand…" oninput="render()"/>
+      </div>
+      <div class="ftabs">
+        <button class="ft act" onclick="setF('all',this)">All</button>
+        <button class="ft" onclick="setF('pending',this)">Pending</button>
+        <button class="ft" onclick="setF('open',this)">Open</button>
+        <button class="ft" onclick="setF('done',this)">Done ✅</button>
+        <button class="ft" onclick="setF('inf',this)">INF ❌</button>
+        <button class="ft" onclick="setF('skip',this)">Skip</button>
+      </div>
+      <div class="tright">
+        <button class="btn bgh btn-sm" onclick="collapseAll()">↑ Collapse All</button>
+        <button class="btn bgh btn-sm" onclick="resetDash()">↺ New Batch</button>
+      </div>
     </div>
-  </div>
-
-  <div class="toolbar">
-    <div class="sbox">
-      <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color:var(--mt);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="srch" placeholder="Search URL, ASIN, brand…" oninput="render()"/>
-    </div>
-    <div class="ftabs">
-      <button class="ft act" onclick="setF('all',this)">All</button>
-      <button class="ft" onclick="setF('pending',this)">Pending</button>
-      <button class="ft" onclick="setF('open',this)">Opened</button>
-      <button class="ft" onclick="setF('done',this)">Done ✅</button>
-      <button class="ft" onclick="setF('inf',this)">INF ❌</button>
-      <button class="ft" onclick="setF('skip',this)">Skip ⚠️</button>
-    </div>
-    <div class="tright">
-      <button class="btn bgh btn-sm" onclick="collapseAll()">↑ Collapse</button>
-      <button class="btn bgh btn-sm" onclick="resetDash()">↺ New Batch</button>
-      <button class="btn bgn btn-sm" onclick="exportExcel()">⬇ Export Excel</button>
-    </div>
-  </div>
-
-  <div class="tcard">
-    <div class="tscroll">
-      <table>
-        <thead><tr>
-          <th>#</th><th>URL / Product</th><th>Status</th>
-          <th>Map Status</th><th>Match</th><th>ASIN</th>
-          <th>T.Price</th><th>T.Brand</th><th>Warehouse</th><th>Actions</th>
-        </tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
+    <div class="tcard">
+      <div class="tscroll">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Product URL</th><th>Status</th>
+            <th>Map</th><th>ASIN</th><th>T.Price</th><th>T.Brand</th><th>Warehouse</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
-</div>
 
-<!-- GUIDELINES PANEL -->
+<!-- GUIDELINES -->
 <div class="gpanel" id="gpanel">
-  <div class="phdr">
-    <div class="phico">📋</div>
-    <div style="flex:1"><div class="phtitle">Mapping Guidelines</div></div>
-    <button class="pclose" onclick="closeGuidelines()">✕</button>
+  <div class="gphdr">
+    <div class="gphico">📋</div>
+    <div class="gptitle">Mapping Guidelines</div>
+    <button class="gpclose" onclick="closeGuidelines()">✕</button>
   </div>
   <div class="gpbody" id="gpbody"></div>
 </div>
@@ -367,134 +439,56 @@ kbd{display:inline-block;background:var(--b4);border:1px solid var(--bd2);border
 <div class="toasts" id="toasts"></div>
 
 <script>
-// ══════════════════════════════════════════════
-// CONSTANTS
-// ══════════════════════════════════════════════
-const INX_OPTS = [
-  '',
-  'Brand + Color + Material',
-  'Brand + Color + Material + Design/Pattern Inexact',
-  'Brand + Color + Material + Design/Pattern Inexact + Size Inexact',
-  'Brand + Color + Size + Design/Pattern Inexact',
-  'Brand + Color + Size Inexact',
-  'Brand + Color Inexact',
-  'Brand + Design/Pattern Inexact',
-  'Brand + Material + Design/Pattern Inexact',
-  'Brand + Material Inexact',
-  'Brand + Size + Design/Pattern Inexact',
-  'Brand + Size + Material + Design/Pattern Inexact',
-  'Brand + Size Inexact',
-  'Brand Inexact',
-  'Brand+Color+Size+Material+Design+Pattern+Pack+Specification',
-  'Brand+Size+Material Inexact',
-  'Color + Design/Pattern Inexact',
-  'Color + Material',
-  'Color + Material + Design/Pattern Inexact',
-  'Color + Size + Design/Pattern Inexact',
-  'Color + Size Inexact',
-  'Color Inexact',
-  'Design/Pattern Inexact',
-  'Material + Design/Pattern Inexact',
-  'Material + Design/Pattern Inexact + Size',
-  'Material Inexact',
-  'Material+Size Inexact',
-  'Pack Inexact',
-  'Size Inexact',
-  'Size Inexact + Design/Pattern Inexact',
-  'Specification Inexact'
-];
+// ════ CONSTANTS ════
+const INX_OPTS=['','Brand + Color + Material','Brand + Color + Material + Design/Pattern Inexact','Brand + Color + Material + Design/Pattern Inexact + Size Inexact','Brand + Color + Size + Design/Pattern Inexact','Brand + Color + Size Inexact','Brand + Color Inexact','Brand + Design/Pattern Inexact','Brand + Material + Design/Pattern Inexact','Brand + Material Inexact','Brand + Size + Design/Pattern Inexact','Brand + Size + Material + Design/Pattern Inexact','Brand + Size Inexact','Brand Inexact','Brand+Color+Size+Material+Design+Pattern+Pack+Specification','Brand+Size+Material Inexact','Color + Design/Pattern Inexact','Color + Material','Color + Material + Design/Pattern Inexact','Color + Size + Design/Pattern Inexact','Color + Size Inexact','Color Inexact','Design/Pattern Inexact','Material + Design/Pattern Inexact','Material + Design/Pattern Inexact + Size','Material Inexact','Material+Size Inexact','Pack Inexact','Size Inexact','Size Inexact + Design/Pattern Inexact','Specification Inexact'];
+const INF_OPTS=['','Refurbished/preowned/renewed','Product Type Not Found','RCAT','Gender Mismatch','Other specification mismatch','Pack/Bundle Mismatch'];
+const MKPL_MAP={'1':{name:'US 🇺🇸',lens:'https://www.amazon.com/shopthelook'},'3':{name:'UK 🇬🇧',lens:'https://www.amazon.co.uk/shopthelook'},'4':{name:'DE 🇩🇪',lens:'https://www.amazon.de/shopthelook'},'5':{name:'FR 🇫🇷',lens:'https://www.amazon.fr/shopthelook'},'6':{name:'JP 🇯🇵',lens:null},'44551':{name:'ES 🇪🇸',lens:'https://www.amazon.es/shopthelook'},'35691':{name:'IT 🇮🇹',lens:'https://www.amazon.it/shopthelook'},'44571':{name:'IN 🇮🇳',lens:null},'123591':{name:'IN 🇮🇳',lens:null}};
+const MONTHS=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
-// INF reasons — removed: Comp OOS, Invalid URL, Blockage, NULL
-const INF_OPTS = [
-  '',
-  'Refurbished/preowned/renewed',
-  'Product Type Not Found',
-  'RCAT',
-  'Gender Mismatch',
-  'Other specification mismatch',
-  'Pack/Bundle Mismatch'
-];
+// ════ STATE ════
+let rows=[],filt='all',expandedIdx=null;
+const SK='temu_mf_v6';
 
-// MKPL code → region/domain mapping
-const MKPL_MAP = {
-  '1':      {region:'US', domain:'amazon.com'},
-  '3':      {region:'UK', domain:'amazon.co.uk'},
-  '4':      {region:'DE', domain:'amazon.de'},
-  '5':      {region:'FR', domain:'amazon.fr'},
-  '6':      {region:'JP', domain:'amazon.co.jp'},
-  '44551':  {region:'ES', domain:'amazon.es'},
-  '35691':  {region:'IT', domain:'amazon.it'},
-  '44571':  {region:'IN', domain:'amazon.in'},
-  '123591': {region:'IN', domain:'amazon.in'},
-};
-
-// ══════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════
-let rows = [], filt = 'all', expandedIdx = null;
-const SK = 'temu_dash_v5';
-let MAPPER_ID = 'steveit';
-
-// ══════════════════════════════════════════════
-// MAPPER ID
-// ══════════════════════════════════════════════
-function saveMapperID(v){
-  MAPPER_ID = v.trim() || 'mapper';
-  localStorage.setItem('temu_mapper_id', MAPPER_ID);
-  updateFilenamePreview();
+// ════ BLOB ANIMATION ════
+{
+  let mx=innerWidth/2,my=innerHeight/2,bx=mx,by=my;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  (function tick(){
+    bx+=(mx-bx)*.05;by+=(my-by)*.05;
+    const b=document.getElementById('blob');
+    if(b){b.style.left=Math.round(bx)+'px';b.style.top=Math.round(by)+'px';}
+    requestAnimationFrame(tick);
+  })();
 }
 
-function updateFilenamePreview(){
-  const now = new Date();
-  const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-  const mon = months[now.getMonth()];
-  const dd = String(now.getDate()).padStart(2,'0');
-  const fn = `${MAPPER_ID}_${mon}_${dd}`;
-  const el = document.getElementById('fname-preview');
-  if(el) el.textContent = fn;
-  return fn;
+// ════ THEME ════
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('mf_theme',next);
+  document.getElementById('theme-btn').textContent=next==='dark'?'☀️':'🌙';
 }
-
-function getExportFilename(){
-  const now = new Date();
-  const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-  const mon = months[now.getMonth()];
-  const dd = String(now.getDate()).padStart(2,'0');
-  return `${MAPPER_ID}_${mon}_${dd}`;
-}
-
-// ══════════════════════════════════════════════
-// SESSION
-// ══════════════════════════════════════════════
-function saveSession(){
-  try{localStorage.setItem(SK,JSON.stringify({rows,ts:Date.now()}));toast('Session saved','ok');}
-  catch(e){toast('Save failed','err');}
-}
-function autoSave(){try{localStorage.setItem(SK,JSON.stringify({rows,ts:Date.now()}));}catch(e){}}
-function restoreSession(){
-  try{
-    const d=JSON.parse(localStorage.getItem(SK)||'null');
-    if(!d)return;
-    rows=d.rows;
-    document.getElementById('sban').style.display='none';
-    loadDash();
-    detectAndShowMkpl();
-    toast('Restored '+rows.length+' rows','ok');
-  }catch(e){toast('Restore failed','err');}
-}
-function clearSession(){localStorage.removeItem(SK);document.getElementById('sban').style.display='none';}
-
+// Set icon on load
 window.addEventListener('load',()=>{
-  // Restore mapper ID
-  const mid = localStorage.getItem('temu_mapper_id');
-  if(mid){
-    MAPPER_ID = mid;
-    const inp = document.getElementById('mapper-id-input');
-    if(inp) inp.value = mid;
-  }
-  updateFilenamePreview();
+  const t=document.documentElement.getAttribute('data-theme')||'dark';
+  document.getElementById('theme-btn').textContent=t==='dark'?'☀️':'🌙';
+});
 
-  // Restore session
+// ════ UPLOAD PANEL INTERACTION ════
+window.addEventListener('load',()=>{
+  const excel=document.getElementById('up-excel');
+  const paste=document.getElementById('up-paste');
+  const panels=document.getElementById('up-panels');
+  if(!excel||!paste)return;
+  excel.addEventListener('mouseenter',()=>{excel.classList.add('panel-grow');excel.classList.remove('panel-shrink');paste.classList.add('panel-shrink');paste.classList.remove('panel-grow');});
+  paste.addEventListener('mouseenter',()=>{paste.classList.add('panel-grow');paste.classList.remove('panel-shrink');excel.classList.add('panel-shrink');excel.classList.remove('panel-grow');});
+  panels.addEventListener('mouseleave',()=>{[excel,paste].forEach(p=>p.classList.remove('panel-grow','panel-shrink'));});
+  // Drag & drop on excel panel
+  excel.addEventListener('dragover',e=>{e.preventDefault();excel.classList.add('drag');});
+  excel.addEventListener('dragleave',()=>excel.classList.remove('drag'));
+  excel.addEventListener('drop',e=>{e.preventDefault();excel.classList.remove('drag');handleFile({target:{files:e.dataTransfer.files}});});
+  // Session banner
   const d=JSON.parse(localStorage.getItem(SK)||'null');
   if(d&&d.rows&&d.rows.length){
     const age=Math.round((Date.now()-d.ts)/60000);
@@ -504,14 +498,16 @@ window.addEventListener('load',()=>{
   buildGuidelines();
 });
 
-// ══════════════════════════════════════════════
-// FILE UPLOAD
-// ══════════════════════════════════════════════
-const uz=document.getElementById('upzone');
-uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
-uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
-uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');handleFile({target:{files:e.dataTransfer.files}});});
+// ════ SESSION ════
+function saveSession(){try{localStorage.setItem(SK,JSON.stringify({rows,mid:document.getElementById('mapper-id').value,ts:Date.now()}));toast('Session saved','ok');}catch(e){toast('Save failed','err');}}
+function autoSave(){try{localStorage.setItem(SK,JSON.stringify({rows,mid:document.getElementById('mapper-id').value,ts:Date.now()}));}catch(e){}}
+function restoreSession(){
+  try{const d=JSON.parse(localStorage.getItem(SK)||'null');if(!d)return;rows=d.rows;if(d.mid)document.getElementById('mapper-id').value=d.mid;document.getElementById('sban').style.display='none';loadDash();toast('Restored '+rows.length+' rows','ok');}
+  catch(e){toast('Restore failed','err');}
+}
+function clearSession(){localStorage.removeItem(SK);document.getElementById('sban').style.display='none';}
 
+// ════ FILE UPLOAD ════
 function handleFile(e){
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
@@ -525,115 +521,78 @@ function handleFile(e){
       const uk=k0.find(k=>/product.*url|temu.*url|comp.*url/i.test(k))||k0.find(k=>String(data[0][k]).includes('temu.com'));
       if(!uk){toast('No PRODUCT URL column found','err');return;}
       rows=data.map((row,i)=>mkRow(i,row,uk));
-      loadDash();detectAndShowMkpl();
-      toast('Loaded '+rows.length+' products','ok');
+      loadDash();toast('Loaded '+rows.length+' products','ok');
     }catch(er){toast('File error: '+er.message,'err');}
   };
   r.readAsArrayBuffer(f);
 }
-
 function loadPaste(){
   const urls=document.getElementById('parea').value.split('\n').map(l=>l.trim()).filter(l=>l.includes('temu.com'));
-  if(!urls.length){toast('No valid Temu URLs found','err');return;}
+  if(!urls.length){toast('No valid Temu URLs','err');return;}
   rows=urls.map((url,i)=>mkRow(i,{},null,url));
-  loadDash();
-  toast('Loaded '+urls.length+' URLs','ok');
+  loadDash();toast('Loaded '+urls.length+' URLs','ok');
 }
-
 function mkRow(i,raw,uk,ou){
   const g=(...a)=>a.map(k=>raw[k]).find(v=>v!==undefined&&v!=='')||'';
   return{
-    idx:i, status:'pending',
-    mkpl:   g('MKPL','mkpl','Marketplace'),
-    url:    ou||String(g(uk,'PRODUCT URL','Product URL','URL','url')||'').trim(),
-    sku:    g('Sku','SKU'),
-    ms:     g('Mapping Status'),
-    mt:     g('Matching Type'),
-    inf:    g('INF Reason'),
-    atc:    g('Mapped ATC URL','ATC URL'),
-    asin:   g('Mapped ASIN','ASIN'),
-    sugAsin:g('Suggested ASIN'),
-    ap:     g('Amazon Price'),
-    tp:     g('Temu Price'),
-    inx:    g('Inexact Reason Code'),
-    tb:     g('Temu Brand'),
-    ab:     g('Amazon Brand'),
-    sel:    g('Temu Seller Name','Seller'),
-    lens:   g('Amazon Lens search done','Lens search done') || 'N',
-    title:  g('Title/Custom title search') || 'Y',
-    iasin:  g('INF ASIN'),
-    wh:     g('Warehouse Details','Warehouse'),
-    ffo:    g('FFO'),
-    ss:     g('Shipping Start Date'),
-    se:     g('Shipping end Date','Shipping End Date'),
-    _raw:   raw
+    idx:i,status:'pending',
+    mkpl:g('MKPL','mkpl','Marketplace'),
+    url:ou||String(g(uk,'PRODUCT URL','Product URL','URL','url')||'').trim(),
+    sku:g('Sku','SKU'),
+    ms:g('Mapping Status'),mt:g('Matching Type'),
+    inf:g('INF Reason'),atc:g('Mapped ATC URL','ATC URL'),
+    asin:g('Mapped ASIN','ASIN'),sugAsin:g('Suggested ASIN'),
+    ap:g('Amazon Price'),tp:g('Temu Price'),
+    inx:g('Inexact Reason Code'),tb:g('Temu Brand'),ab:g('Amazon Brand'),
+    sel:g('Temu Seller Name','Seller'),
+    lens:g('Amazon Lens search done','Lens search done')||'Y',
+    title:g('Title/Custom title search','Title/Cust om title search')||'N',
+    iasin:g('INF ASIN'),wh:g('Warehouse Details','Warehouse'),
+    ffo:g('FFO'),ss:g('Shipping Start Date'),
+    se:g('Shipping end Date','Shipping End Date'),_raw:raw
   };
 }
-
-function detectAndShowMkpl(){
-  const mkpl = rows.find(r=>r.mkpl)?.mkpl || '';
-  if(mkpl){
-    document.getElementById('mkpl-val').textContent = mkpl;
-    document.getElementById('mkpl-display').style.display = 'flex';
-  }
-}
-
 function loadDash(){
   document.getElementById('uppage').style.display='none';
   document.getElementById('dash').style.display='block';
   document.getElementById('expbtn').style.display='inline-flex';
-  document.getElementById('hchips').style.display='flex';
+  document.getElementById('mid-bar').style.display='flex';
+  const mkpl=rows.find(r=>r.mkpl)?.mkpl||'';
+  const info=MKPL_MAP[String(mkpl).trim()];
+  const pill=document.getElementById('mkpl-pill');
+  if(mkpl){pill.textContent=(info?info.name+' · ':'')+'MKPL '+mkpl;pill.style.display='inline-flex';}
   render();stats();
 }
 
-// ══════════════════════════════════════════════
-// RENDER
-// ══════════════════════════════════════════════
+// ════ RENDER ════
 function vis(){
   const q=(document.getElementById('srch')?.value||'').toLowerCase();
   return rows.filter(r=>{
     if(filt!=='all'&&r.status!==filt)return false;
-    if(q&&![r.url,r.mkpl,r.asin,r.tb,r.sel,r.ffo,r.sku,r.ab,r.inf,r.inx].join(' ').toLowerCase().includes(q))return false;
+    if(q&&![r.url,r.mkpl,r.asin,r.tb,r.sel,r.ffo,r.sku,r.ab,r.inx].join(' ').toLowerCase().includes(q))return false;
     return true;
   });
 }
-
-const SC={pending:['sp','⏳ Pending'],open:['so','🔗 Open'],done:['sd','✅ Done'],inf:['si','❌ INF'],skip:['sk','⚠️ Skip']};
-function whtag(w){
-  if(!w)return'<span class="dim">—</span>';
-  if(/local warehouse/i.test(w)||w==='Local')return'<span style="color:var(--glt);font-size:10px">🏠 Local</span>';
-  return'<span style="color:var(--mt);font-size:10px">🌐 Non Local</span>';
-}
-function mbadge(ms){
-  if(!ms)return'<span class="dim">—</span>';
-  const c={IF:'#4ADE80',INF:'#F87171',INVALID:'#fde047'};
-  const bg={IF:'rgba(22,163,74,.13)',INF:'rgba(220,38,38,.13)',INVALID:'rgba(234,179,8,.12)'};
-  return'<span style="background:'+(bg[ms]||'var(--b4)')+';color:'+(c[ms]||'var(--mt)')+';padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">'+ms+'</span>';
-}
-function su(u){return u.replace(/https?:\/\/(www\.)?temu\.com\/[a-z]{2,5}(-[a-z]{2,5})?\/*/,'').substring(0,44)+(u.length>58?'…':'');}
+const SC={pending:['sp','⏳'],open:['so','🔗'],done:['sd','✅'],inf:['si','❌'],skip:['sk','⚠️']};
+function mbadge(ms){if(!ms)return'<span class="dim">—</span>';const c={IF:'#4ADE80',INF:'#F87171',INVALID:'#fde047'};const bg={IF:'rgba(22,163,74,.12)',INF:'rgba(220,38,38,.12)',INVALID:'rgba(234,179,8,.11)'};return'<span style="background:'+(bg[ms]||'var(--b4)')+';color:'+(c[ms]||'var(--mt)')+';padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">'+ms+'</span>';}
+function whtag(w){if(!w)return'<span class="dim">—</span>';return/^local/i.test(w)?'<span style="color:var(--glt);font-size:10px">🏠 Local</span>':'<span style="color:var(--mt);font-size:10px">🌐 Non Local</span>';}
+function su(u){return u.replace(/https?:\/\/(www\.)?temu\.com\/[a-z]{2,6}(-[a-z]{2,6})?\/*/,'').substring(0,45)+(u.length>58?'…':'');}
 
 function render(){
   const tbody=document.getElementById('tbody');
   const v=vis();
-  if(!v.length){
-    tbody.innerHTML='<tr><td colspan="10"><div style="text-align:center;padding:36px;color:var(--mt)"><div style="font-size:24px;margin-bottom:8px;opacity:.4">🔍</div><div style="font-size:13px;font-weight:700;color:var(--tx)">No rows match</div></div></td></tr>';
-    return;
-  }
-  let html='';
+  if(!v.length){tbody.innerHTML='<tr><td colspan="9"><div style="text-align:center;padding:40px;color:var(--mt)"><div style="font-size:22px;opacity:.3;margin-bottom:8px">🔍</div><div style="font-size:13px;font-weight:700;color:var(--tx)">No rows match</div></div></td></tr>';return;}
+  let h='';
   v.forEach(r=>{
-    const[sc,sl]=SC[r.status]||['sp','⏳ Pending'];
+    const[sc,sl]=SC[r.status]||['sp','⏳'];
     const isExp=expandedIdx===r.idx;
-    html+=`<tr class="main-row ${r.status==='done'?'rdone':''} ${isExp?'ropen':''}" id="tr-${r.idx}" style="cursor:pointer" onclick="toggleExpand(${r.idx})">
+    h+=`<tr class="main-row ${r.status==='done'?'rdone':''} ${isExp?'ropen':''}" id="tr-${r.idx}" onclick="toggleExpand(${r.idx})" style="cursor:pointer">
       <td class="rn">${r.idx+1}</td>
       <td class="urltd" title="${r.url}">
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="color:var(--or);font-size:11px;transition:transform .15s;display:inline-block;transform:${isExp?'rotate(90deg)':'rotate(0deg)'}" id="chev-${r.idx}">▶</span>
-          <span>${su(r.url)||'<span class="dim">—</span>'}</span>
-        </div>
+        <span style="color:var(--or);margin-right:4px;font-size:9px;display:inline-block;transition:transform .15s;transform:${isExp?'rotate(90deg)':'rotate(0)'}" id="chv-${r.idx}">▶</span>${su(r.url)||'—'}
       </td>
       <td><span class="sbadge ${sc}">${sl}</span></td>
       <td>${mbadge(r.ms)}</td>
-      <td style="font-size:10px;color:var(--mt)">${r.mt||'<span class="dim">—</span>'}</td>
       <td style="font-family:var(--mo);font-size:10px;color:${r.asin?'var(--glt)':'var(--sb)'}">${r.asin||'—'}</td>
       <td style="color:var(--or);font-weight:700;font-family:var(--mo);font-size:10.5px">${r.tp||'<span class="dim">—</span>'}</td>
       <td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px">${r.tb||'<span class="dim">—</span>'}</td>
@@ -641,17 +600,16 @@ function render(){
       <td onclick="event.stopPropagation()">
         <div class="acts">
           ${r.url?`<button class="btn bor btn-xs" onclick="openProd(${r.idx})" title="Open Temu">🔗</button>`:''}
-          ${r.status==='done'
-            ?`<button class="btn bgh btn-xs" onclick="qst(${r.idx},'pending')" title="Undo">↩</button>`
-            :`<button class="btn bgn btn-xs" onclick="qst(${r.idx},'done')" title="Done">✓</button>`}
+          ${r.status==='done'?`<button class="btn bundo btn-xs" onclick="undoDone(${r.idx})" title="Undo">↩</button>`:`<button class="btn bgn btn-xs" onclick="qstSafe(${r.idx},'done')" title="Done">✓</button>`}
+          <button class="btn bgh btn-xs" onclick="qstSafe(${r.idx},'skip')" style="color:var(--rlt)" title="Skip">✕</button>
         </div>
       </td>
     </tr>
     <tr class="expand-row ${isExp?'open':''}" id="exp-${r.idx}">
-      <td colspan="10">${isExp?buildExpand(r):''}</td>
+      <td colspan="9">${isExp?buildExpand(r):''}</td>
     </tr>`;
   });
-  tbody.innerHTML=html;
+  tbody.innerHTML=h;
 }
 
 function stats(){
@@ -660,461 +618,418 @@ function stats(){
   const done=rows.filter(r=>['done','inf','skip'].includes(r.status)).length;
   const pd=rows.filter(r=>['pending','open'].includes(r.status)).length;
   const pct=rows.length?Math.round(done/rows.length*100):0;
-  document.getElementById('s-tot').textContent=rows.length;
-  document.getElementById('s-dn').textContent=dn;
-  document.getElementById('s-pd').textContent=pd;
-  document.getElementById('s-if').textContent=inf;
-  document.getElementById('ps-dn').textContent=dn;
-  document.getElementById('ps-pd').textContent=pd;
-  document.getElementById('ps-if').textContent=inf;
+  ['tot','dn','pd','if'].forEach((k,i)=>{const el=document.getElementById('s-'+k);if(el)el.textContent=[rows.length,dn,pd,inf][i];});
+  ['dn','pd','if'].forEach((k,i)=>{const el=document.getElementById('ps-'+k);if(el)el.textContent=[dn,pd,inf][i];});
   document.getElementById('pfill').style.width=pct+'%';
-  document.getElementById('ptxt').textContent=done+' of '+rows.length+' completed';
+  document.getElementById('ptxt').textContent=done+' / '+rows.length;
   document.getElementById('ppct').textContent=pct+'%';
 }
 
 function setF(f,btn){filt=f;document.querySelectorAll('.ft').forEach(t=>t.classList.remove('act'));btn.classList.add('act');render();}
-function qst(idx,st){rows[idx].status=st;render();stats();autoSave();}
-
+function qstSafe(idx,st){saveExpanded();rows[idx].status=st;render();stats();autoSave();}
+function undoDone(idx){saveExpanded();rows[idx].status='pending';render();stats();autoSave();}
 function openProd(idx){
   const r=rows[idx];if(!r.url)return;
   window.open(r.url,'_blank');
   if(r.status==='pending'){rows[idx].status='open';render();stats();}
-  toast('Opened — run scraper, then expand ▼ to fill data','info');
+  toast('Opened. Run Temu Scraper, then expand row ▶ to fill data.','info');
 }
 
-// ══════════════════════════════════════════════
-// EXPAND / COLLAPSE
-// ══════════════════════════════════════════════
+// ════ EXPAND ════
 function toggleExpand(idx){
-  if(expandedIdx===idx){saveExpanded();expandedIdx=null;}
-  else{saveExpanded();expandedIdx=idx;if(rows[idx].status==='pending'){rows[idx].status='open';stats();}}
+  saveExpanded();
+  expandedIdx=expandedIdx===idx?null:idx;
+  if(expandedIdx!==null&&rows[expandedIdx].status==='pending'){rows[expandedIdx].status='open';stats();}
   render();
-  if(expandedIdx!==null)setTimeout(()=>document.getElementById('exp-'+expandedIdx)?.scrollIntoView({block:'nearest',behavior:'smooth'}),50);
+  if(expandedIdx!==null)setTimeout(()=>document.getElementById('exp-'+expandedIdx)?.scrollIntoView({block:'nearest',behavior:'smooth'}),40);
 }
 function collapseAll(){saveExpanded();expandedIdx=null;render();}
 
-// ══════════════════════════════════════════════
-// BUILD EXPAND PANEL
-// ══════════════════════════════════════════════
+// ════ BUILD EXPAND HTML ════
 function buildExpand(r){
   const i=r.idx;
-  const selOpt=(opts,val)=>opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o||'— Select —'}</option>`).join('');
+  const mkpl=r.mkpl||(rows.find(x=>x.mkpl)?.mkpl||'');
+  const info=MKPL_MAP[String(mkpl).trim()];
+  const lensUrl=info?.lens||null;
   const autoNull=['INF','INVALID'].includes(r.ms);
-  const mt=autoNull?'NULL':(r.mt||'');
+  const effMt=autoNull?'NULL':r.mt;
+  const selOpt=(opts,val)=>opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o||'— Select —'}</option>`).join('');
+  const msOpts=['','IF','INF','INVALID'].map(v=>`<option value="${v}" ${r.ms===v?'selected':''}>${v||'— Select —'}</option>`).join('');
+  const mtOpts=['','EXACT','INEXACT','NULL'].map(v=>`<option value="${v}" ${effMt===v?'selected':''}>${v||'— Select —'}</option>`).join('');
+  const showInfR=r.ms==='INF';
+  const showInx=effMt==='INEXACT';
 
-  // MKPL → lens URL
-  const mkplCode=String(r.mkpl||'').trim();
-  const mkplInfo=MKPL_MAP[mkplCode]||null;
-  const lensUrl=mkplInfo?`https://www.${mkplInfo.domain}/shopthelook`:'';
-  const lensLabel=mkplInfo?`🔍 ShopTheLook (${mkplInfo.region})`:'🔍 ShopTheLook';
-
-  // Lens Y/N
-  const lensVal=r.lens||'N';
-  const titleVal=r.title||'Y';
-
-  return `<div class="exp-inner">
-
-    <!-- HEADER -->
-    <div class="exp-hdr">
-      <span style="font-size:10px;font-weight:700;color:var(--or)">Row ${i+1}</span>
-      <span class="exp-url" title="${r.url}">${r.url}</span>
-      ${r.mkpl?`<span class="mtag">${r.mkpl}${mkplInfo?' · '+mkplInfo.region:''}</span>`:''}
+  return`<div class="ei">
+    <!-- ACTION BUTTONS ROW -->
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <button class="btn btemu btn-sm" onclick="clipPaste('temu',${i})">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        Temu Scraper
+      </button>
+      <button class="btn bamz btn-sm" onclick="clipPaste('amz',${i})">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        Amazon Scraper
+      </button>
+      ${lensUrl?`<a href="${lensUrl}" target="_blank" class="btn blens btn-sm" onclick="event.stopPropagation()" style="text-decoration:none">🔍 Amazon Lens</a>`:''}
+      <span style="font-family:var(--mo);font-size:9.5px;color:var(--mt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0" title="${r.url}">${r.url}</span>
+      ${r.url?`<a href="${r.url}" target="_blank" onclick="openProd(${i});event.stopPropagation()" class="btn bor btn-xs" style="text-decoration:none;flex-shrink:0">🔗 Open</a>`:''}
     </div>
 
-    <!-- SCRAPER BUTTONS + LENS -->
-    <div class="scraper-row">
-      <div class="scraper-btn-block">
-        <div class="scraper-lbl">Temu Scraper</div>
-        <button class="btn btemu btn-sm" onclick="pasteAndParseTemu(${i})">📋 Paste Temu Data</button>
-        <div class="scraper-applied" id="temu-applied-${i}"></div>
-      </div>
-      <div class="sdivider"></div>
-      <div class="scraper-btn-block">
-        <div class="scraper-lbl">Amazon Scraper</div>
-        <button class="btn bamz btn-sm" onclick="pasteAndParseAmz(${i})">📋 Paste Amazon Data</button>
-        <div class="scraper-applied" id="amz-applied-${i}"></div>
-      </div>
-      ${lensUrl?`
-      <div class="sdivider"></div>
-      <div class="scraper-btn-block">
-        <div class="scraper-lbl">Amazon Lens</div>
-        <button class="btn blens btn-sm" onclick="window.open('${lensUrl}','_blank')">${lensLabel}</button>
-      </div>`:''}
-    </div>
-
-    <!-- FIELDS -->
-    <div class="fields-section">
-
-      <!-- Row 1: Mapping Status | Matching Type | INF Reason (conditional) -->
-      <div class="fields-row">
-        <div class="fld narrow">
+    <!-- MAPPING SECTION -->
+    <div class="ei-sec">
+      <div class="ei-sec-hd">🎯 Mapping</div>
+      <div class="fg">
+        <div class="fld">
           <div class="flbl">Mapping Status</div>
-          <select class="fsel" id="f-ms-${i}" onchange="onMSChange(${i})" style="${r.ms==='IF'?'border-color:rgba(22,163,74,.3);color:var(--glt)':r.ms==='INF'?'border-color:rgba(220,38,38,.3);color:var(--rlt)':r.ms==='INVALID'?'border-color:rgba(234,179,8,.3);color:#fde047':''}">
-            <option value="" ${!r.ms?'selected':''}>— Select —</option>
-            <option value="IF" ${r.ms==='IF'?'selected':''}>IF</option>
-            <option value="INF" ${r.ms==='INF'?'selected':''}>INF</option>
-            <option value="INVALID" ${r.ms==='INVALID'?'selected':''}>INVALID</option>
-          </select>
+          <select class="fsel" id="f-ms-${i}" onchange="onMsChange(${i})">${msOpts}</select>
         </div>
-        <div class="fld narrow">
+        <div class="fld">
           <div class="flbl">Matching Type</div>
-          <select class="fsel" id="f-mt-${i}" ${autoNull?'disabled style="opacity:.45"':''}>
-            <option value="" ${!mt?'selected':''}>— Select —</option>
-            <option value="EXACT" ${mt==='EXACT'?'selected':''}>EXACT</option>
-            <option value="INEXACT" ${mt==='INEXACT'?'selected':''}>INEXACT</option>
-            <option value="NULL" ${mt==='NULL'||autoNull?'selected':''}>NULL</option>
+          <select class="fsel" id="f-mt-${i}" onchange="onMtChange(${i})" ${autoNull?'disabled':''}>
+            ${mtOpts}
           </select>
         </div>
-        <div class="fld" id="inf-reason-wrap-${i}" style="${r.ms==='INF'?'':'display:none'}" >
+        <div class="fld" id="infr-${i}" style="${showInfR?'':'display:none'}">
           <div class="flbl">INF Reason</div>
           <select class="fsel" id="f-inf-${i}">${selOpt(INF_OPTS,r.inf)}</select>
         </div>
-      </div>
-
-      <!-- Row 2: ATC URL | Mapped ASIN | INF ASIN -->
-      <div class="fields-row">
-        <div class="fld wide">
-          <div class="flbl">Mapped ATC URL</div>
-          <input class="fin" id="f-atc-${i}" placeholder="https://www.temu.com/goods.html?_bg_fs=1&goods_id=…" value="${r.atc||''}"/>
+        <div class="fld" id="inx-${i}" style="${showInx?'':'display:none'}">
+          <div class="flbl">Inexact Reason Code</div>
+          <select class="fsel" id="f-inx-${i}" style="font-size:10.5px">${selOpt(INX_OPTS,r.inx)}</select>
         </div>
+      </div>
+    </div>
+
+    <!-- AMAZON SECTION -->
+    <div class="ei-sec">
+      <div class="ei-sec-hd">🟡 Amazon Data</div>
+      <div class="fg atcrow">
+        <div class="fld">
+          <div class="flbl">Mapped ATC URL</div>
+          <input class="fin" id="f-atc-${i}" placeholder="https://www.temu.com/goods.html?_bg_fs=1&goods_id=…" value="${r.atc}"/>
+        </div>
+      </div>
+      <div class="fg">
         <div class="fld">
           <div class="flbl">Mapped ASIN</div>
-          <input class="fin" id="f-asin-${i}" placeholder="B0XXXXXXXX" value="${r.asin||''}" style="font-family:var(--mo)"/>
+          <input class="fin" id="f-asin-${i}" placeholder="B0XXXXXXXX" value="${r.asin}" style="font-family:var(--mo)"/>
         </div>
         <div class="fld">
-          <div class="flbl">INF ASIN</div>
-          <input class="fin" id="f-iasin-${i}" placeholder="B0XXXXXXXX" value="${r.iasin||''}" style="font-family:var(--mo)"/>
-        </div>
-      </div>
-
-      <!-- Row 3: Amazon Price | Temu Price | Inexact Reason Code -->
-      <div class="fields-row">
-        <div class="fld narrow">
           <div class="flbl">Amazon Price</div>
-          <input class="fin" id="f-ap-${i}" placeholder="25.99" value="${r.ap||''}" style="font-family:var(--mo)"/>
-        </div>
-        <div class="fld narrow">
-          <div class="flbl">Temu Price</div>
-          <input class="fin" id="f-tp-${i}" placeholder="3.95" value="${r.tp||''}" style="font-family:var(--mo)"/>
-        </div>
-        <div class="fld wide">
-          <div class="flbl">Inexact Reason Code</div>
-          <select class="fsel" id="f-inx-${i}">${selOpt(INX_OPTS,r.inx)}</select>
-        </div>
-      </div>
-
-      <!-- Row 4: Temu Brand | Amazon Brand | Temu Seller -->
-      <div class="fields-row">
-        <div class="fld">
-          <div class="flbl">Temu Brand</div>
-          <input class="fin" id="f-tb-${i}" placeholder="Brand Not Mentioned" value="${r.tb||''}"/>
+          <input class="fin" id="f-ap-${i}" placeholder="25.99" value="${r.ap}" style="font-family:var(--mo)"/>
         </div>
         <div class="fld">
           <div class="flbl">Amazon Brand</div>
-          <input class="fin" id="f-ab-${i}" placeholder="Brand name" value="${r.ab||''}"/>
+          <input class="fin" id="f-ab-${i}" placeholder="Brand name" value="${r.ab}"/>
+        </div>
+        <div class="fld" id="iasin-${i}" style="${autoNull?'':'display:none'}">
+          <div class="flbl">INF ASIN</div>
+          <input class="fin" id="f-iasin-${i}" placeholder="B0XXXXXXXX" value="${r.iasin}" style="font-family:var(--mo)"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMU SECTION -->
+    <div class="ei-sec">
+      <div class="ei-sec-hd" style="color:var(--teal)">🟢 Temu Data</div>
+      <div class="fg">
+        <div class="fld">
+          <div class="flbl">Temu Price</div>
+          <input class="fin" id="f-tp-${i}" placeholder="3.95" value="${r.tp}" style="font-family:var(--mo)"/>
+        </div>
+        <div class="fld">
+          <div class="flbl">Temu Brand</div>
+          <input class="fin" id="f-tb-${i}" placeholder="Brand Not Mentioned" value="${r.tb}"/>
         </div>
         <div class="fld">
           <div class="flbl">Temu Seller</div>
-          <input class="fin" id="f-sel-${i}" placeholder="Seller name" value="${r.sel||''}"/>
+          <input class="fin" id="f-sel-${i}" placeholder="Seller name" value="${r.sel}"/>
         </div>
-      </div>
-
-      <!-- Row 5: Warehouse | FFO | Ship Start | Ship End | Amazon Lens | Title Search -->
-      <div class="fields-row">
         <div class="fld">
           <div class="flbl">Warehouse</div>
           <select class="fsel" id="f-wh-${i}">
-            <option value="">— Select —</option>
-            <option value="Local Warehouse" ${(r.wh==='Local Warehouse'||r.wh==='Local')?'selected':''}>🏠 Local</option>
-            <option value="Non Local Warehouse" ${(r.wh==='Non Local Warehouse'||r.wh==='Non Local')?'selected':''}>🌐 Non Local</option>
+            <option value="" ${!r.wh?'selected':''}>— Select —</option>
+            <option value="Local Warehouse" ${/^local/i.test(r.wh)?'selected':''}>🏠 Local Warehouse</option>
+            <option value="Non Local Warehouse" ${/^non/i.test(r.wh)?'selected':''}>🌐 Non Local Warehouse</option>
           </select>
         </div>
         <div class="fld">
           <div class="flbl">FFO (Origin)</div>
-          <input class="fin" id="f-ffo-${i}" placeholder="Guangdong,China" value="${r.ffo||''}"/>
+          <input class="fin" id="f-ffo-${i}" placeholder="Guangdong,China" value="${r.ffo}"/>
         </div>
-        <div class="fld narrow">
-          <div class="flbl">Ship Start</div>
-          <input class="fin" id="f-ss-${i}" type="date" value="${toDateInput(r.ss||'')}" style="font-family:var(--mo)"/>
+        <div class="fld">
+          <div class="flbl">Shipping Start</div>
+          <input class="fin" id="f-ss-${i}" type="date" value="${toDateInput(r.ss)}" style="font-family:var(--mo)"/>
         </div>
-        <div class="fld narrow">
-          <div class="flbl">Ship End</div>
-          <input class="fin" id="f-se-${i}" type="date" value="${toDateInput(r.se||'')}" style="font-family:var(--mo)"/>
-        </div>
-        <div class="fld narrow">
-          <div class="flbl">Lens Done?</div>
-          <div class="yn-btns">
-            <button class="yn-btn ${lensVal==='Y'?'sel-Y':''}" id="lens-Y-${i}" onclick="setYN(${i},'lens','Y')">Y</button>
-            <button class="yn-btn ${lensVal==='N'?'sel-N':''}" id="lens-N-${i}" onclick="setYN(${i},'lens','N')">N</button>
-          </div>
-          <input type="hidden" id="f-lens-${i}" value="${lensVal}"/>
-        </div>
-        <div class="fld narrow">
-          <div class="flbl">Title Search?</div>
-          <div class="yn-btns">
-            <button class="yn-btn ${titleVal==='Y'?'sel-Y':''}" id="title-Y-${i}" onclick="setYN(${i},'title','Y')">Y</button>
-            <button class="yn-btn ${titleVal==='N'?'sel-N':''}" id="title-N-${i}" onclick="setYN(${i},'title','N')">N</button>
-          </div>
-          <input type="hidden" id="f-title-${i}" value="${titleVal}"/>
+        <div class="fld">
+          <div class="flbl">Shipping End</div>
+          <input class="fin" id="f-se-${i}" type="date" value="${toDateInput(r.se)}" style="font-family:var(--mo)"/>
         </div>
       </div>
-
     </div>
 
-    <!-- ACTION BAR -->
-    <div class="exp-actions">
-      <button class="btn bgn btn-sm" onclick="saveExpanded();qst(${i},'done')">✓ Save as Done (IF)</button>
-      <button class="btn brd btn-sm" onclick="saveExpanded();qst(${i},'inf')">✕ Save as INF</button>
-      <button class="btn bgh btn-sm" onclick="saveExpanded();collapseAll()">💾 Save & Collapse</button>
-      <span class="mapper-tag">👤 ${MAPPER_ID}</span>
+    <!-- CHECKS -->
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="flbl">Amazon Lens Done</span>
+        <div class="yn">
+          <button class="yn-btn yn-y ${r.lens==='Y'?'on':''}" onclick="setYN(${i},'lens','Y')">Y</button>
+          <button class="yn-btn yn-n ${r.lens==='N'?'on':''}" onclick="setYN(${i},'lens','N')">N</button>
+        </div>
+        <input type="hidden" id="f-lens-${i}" value="${r.lens||'Y'}"/>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="flbl">Title Search Done</span>
+        <div class="yn">
+          <button class="yn-btn yn-y ${r.title==='Y'?'on':''}" onclick="setYN(${i},'title','Y')">Y</button>
+          <button class="yn-btn yn-n ${r.title==='N'?'on':''}" onclick="setYN(${i},'title','N')">N</button>
+        </div>
+        <input type="hidden" id="f-title-${i}" value="${r.title||'N'}"/>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="ei-actions">
+      <button class="btn bgn btn-sm" onclick="saveRow(${i},'done')">✓ Save as Done</button>
+      <button class="btn brd btn-sm" onclick="saveRow(${i},'inf')">✕ Save as INF</button>
+      <button class="btn bnext btn-sm" onclick="saveAndNext(${i})">→ Save & Next</button>
+      <button class="btn bgh btn-sm" onclick="saveExpanded();collapseAll()">💾 Close</button>
+      <button class="btn bgh btn-sm" style="background:rgba(37,99,235,.1);color:#93C5FD;border-color:rgba(37,99,235,.22)" onclick="saveExpanded();copyFullRow(${i})">📋 Copy Row</button>
+      ${r.status==='done'?`<button class="btn bundo btn-sm" onclick="undoDone(${i})">↩ Undo Done</button>`:''}
+      <button class="btn bgh btn-sm" onclick="qstSafe(${i},'skip');collapseAll()">Skip</button>
     </div>
   </div>`;
 }
 
-// ══════════════════════════════════════════════
-// Y/N TOGGLE
-// ══════════════════════════════════════════════
-function setYN(idx, field, val){
-  const hf = document.getElementById('f-'+field+'-'+idx);
-  if(hf) hf.value = val;
-  ['Y','N'].forEach(v=>{
-    const btn = document.getElementById(field+'-'+v+'-'+idx);
-    if(btn) btn.className = 'yn-btn' + (v===val?' sel-'+v:'');
-  });
+// ════ DYNAMIC FIELD VISIBILITY ════
+function onMsChange(i){
+  const ms=document.getElementById('f-ms-'+i)?.value||'';
+  const autoNull=['INF','INVALID'].includes(ms);
+  const mtEl=document.getElementById('f-mt-'+i);
+  if(mtEl){mtEl.disabled=autoNull;if(autoNull)mtEl.value='NULL';}
+  const infrEl=document.getElementById('infr-'+i);
+  if(infrEl)infrEl.style.display=ms==='INF'?'':'none';
+  const iasinEl=document.getElementById('iasin-'+i);
+  if(iasinEl)iasinEl.style.display=autoNull?'':'none';
+  const mt=autoNull?'NULL':(mtEl?.value||'');
+  const inxEl=document.getElementById('inx-'+i);
+  if(inxEl)inxEl.style.display=mt==='INEXACT'?'':'none';
+}
+function onMtChange(i){
+  const mt=document.getElementById('f-mt-'+i)?.value||'';
+  const inxEl=document.getElementById('inx-'+i);
+  if(inxEl)inxEl.style.display=mt==='INEXACT'?'':'none';
+}
+function setYN(i,field,val){
+  const hf=document.getElementById('f-'+field+'-'+i);if(hf)hf.value=val;
+  const isLens=field==='lens';
+  const yBtn=document.querySelector(`#exp-${i} .yn-btn.yn-y[onclick*="'${field}'"]`);
+  const nBtn=document.querySelector(`#exp-${i} .yn-btn.yn-n[onclick*="'${field}'"]`);
+  if(yBtn){yBtn.classList.toggle('on',val==='Y');}
+  if(nBtn){nBtn.classList.toggle('on',val==='N');}
 }
 
-// ══════════════════════════════════════════════
-// MAPPING STATUS CHANGE
-// ══════════════════════════════════════════════
-function onMSChange(idx){
-  const sel = document.getElementById('f-ms-'+idx);
-  if(!sel) return;
-  const val = sel.value;
+// ════ DATE HELPERS ════
+function toDateInput(v){if(!v)return'';const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v.trim());if(m)return`${m[3]}-${m[1]}-${m[2]}`;if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;return'';}
+function fromDateInput(v){if(!v)return'';const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v);return m?`${m[2]}/${m[3]}/${m[1]}`:v;}
 
-  // Color coding
-  sel.style.color = val==='IF'?'var(--glt)':val==='INF'?'var(--rlt)':val==='INVALID'?'#fde047':'';
-  sel.style.borderColor = val==='IF'?'rgba(22,163,74,.3)':val==='INF'?'rgba(220,38,38,.3)':val==='INVALID'?'rgba(234,179,8,.3)':'var(--bd2)';
-
-  // Auto NULL for INF/INVALID
-  const autoNull = ['INF','INVALID'].includes(val);
-  const mtSel = document.getElementById('f-mt-'+idx);
-  if(mtSel){
-    if(autoNull){mtSel.value='NULL';mtSel.disabled=true;mtSel.style.opacity='.45';}
-    else{mtSel.disabled=false;mtSel.style.opacity='1';}
-  }
-
-  // Show/hide INF reason
-  const infWrap = document.getElementById('inf-reason-wrap-'+idx);
-  if(infWrap) infWrap.style.display = val==='INF'?'':'none';
+// ════ CLIPBOARD PASTE ════
+async function clipPaste(type,idx){
+  let text='';
+  try{text=await navigator.clipboard.readText();}
+  catch(e){text=prompt((type==='temu'?'Temu':'Amazon')+' scraper data (paste here):');if(!text)return;}
+  if(!text?.trim()){toast('Clipboard is empty','err');return;}
+  type==='temu'?parseTemu(idx,text):parseAmz(idx,text);
 }
 
-// ══════════════════════════════════════════════
-// DATE HELPERS
-// ══════════════════════════════════════════════
-function toDateInput(v){
-  if(!v)return'';
-  const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v.trim());
-  if(m)return`${m[3]}-${m[1]}-${m[2]}`;
-  if(/^\d{4}-\d{2}-\d{2}$/.test(v))return v;
-  return'';
-}
-function fromDateInput(v){
-  if(!v)return'';
-  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
-  if(m)return`${m[2]}/${m[3]}/${m[1]}`;
-  return v;
-}
-
-// ══════════════════════════════════════════════
-// SAVE EXPANDED ROW DATA
-// ══════════════════════════════════════════════
-function saveExpanded(){
-  if(expandedIdx===null)return;
-  const i=expandedIdx;
-  const g=id=>{const e=document.getElementById(id);return e?e.value:'';}
-
-  rows[i].ms    = g('f-ms-'+i);
-  rows[i].mt    = g('f-mt-'+i);
-  rows[i].inf   = g('f-inf-'+i);
-  rows[i].atc   = g('f-atc-'+i);
-  rows[i].asin  = g('f-asin-'+i);
-  rows[i].ap    = g('f-ap-'+i);
-  rows[i].tp    = g('f-tp-'+i);
-  rows[i].inx   = g('f-inx-'+i);
-  rows[i].tb    = g('f-tb-'+i);
-  rows[i].ab    = g('f-ab-'+i);
-  rows[i].sel   = g('f-sel-'+i);
-  rows[i].lens  = g('f-lens-'+i);
-  rows[i].title = g('f-title-'+i);
-  rows[i].iasin = g('f-iasin-'+i);
-  rows[i].wh    = g('f-wh-'+i);
-  rows[i].ffo   = g('f-ffo-'+i);
-  rows[i].ss    = fromDateInput(g('f-ss-'+i));
-  rows[i].se    = fromDateInput(g('f-se-'+i));
-
-  if(['INF','INVALID'].includes(rows[i].ms))rows[i].status='inf';
-  else if(rows[i].asin||rows[i].atc||rows[i].ms==='IF')rows[i].status='done';
-
-  autoSave();
-}
-
-// ══════════════════════════════════════════════
-// CLIPBOARD PASTE — TEMU SCRAPER
-// ══════════════════════════════════════════════
-async function pasteAndParseTemu(idx){
-  let raw='';
-  try{raw=await navigator.clipboard.readText();}
-  catch(e){toast('Clipboard access denied — please allow & try again','err');return;}
-  raw=raw.trim();
-  if(!raw){toast('Clipboard is empty','err');return;}
-  parseTemuRaw(idx,raw);
-}
-
-function parseTemuRaw(idx,raw){
-  const cols=raw.split('\t');
+// ════ PARSE TEMU SCRAPER ════
+function parseTemu(idx,raw){
+  if(!raw?.trim()){toast('No Temu data','err');return;}
+  const cols=raw.trim().split('\t');
   let tp='',tb='',sel='',wh='',ffo='',ss='',se='',atc='';
-
   let start=0;
-  if(cols[0]&&cols[0].trim().startsWith('http')&&cols[0].includes('temu.com')){atc=cols[0].trim();start=1;}
+  if(cols[0]?.trim().startsWith('http')&&cols[0].includes('temu.com')){atc=cols[0].trim();start=1;}
   const c=i=>(cols[start+i]||'').trim();
-
-  const maybePrice=c(0);
-  if(maybePrice&&/^[\d.]+$/.test(maybePrice.replace(/[£€$,]/g,''))){tp=maybePrice.replace(/[£€$,]/g,'');}
+  if(c(0)&&/^[\d.]+$/.test(c(0).replace(/[£€$,]/g,'')))tp=c(0).replace(/[£€$,]/g,'');
   if(c(2))tb=c(2);
-  if(c(4))sel=c(4);
-
+  const potSel=c(4);
+  if(potSel&&!/^(local|non.?local)/i.test(potSel))sel=potSel;
   for(let j=0;j<cols.length;j++){
-    const v=(cols[j]||'').trim();
-    if(!v)continue;
-    if(/^local warehouse$/i.test(v)){wh='Local Warehouse';}
-    else if(/^local$/i.test(v)){wh='Local Warehouse';}
-    else if(/^non.?local warehouse$/i.test(v)){wh='Non Local Warehouse';}
-    else if(/^non.?local$/i.test(v)){wh='Non Local Warehouse';}
+    const v=(cols[j]||'').trim();if(!v)continue;
+    if(/^local warehouse$/i.test(v))wh='Local Warehouse';
+    else if(/^local$/i.test(v))wh='Local Warehouse';
+    else if(/^non.?local warehouse$/i.test(v))wh='Non Local Warehouse';
+    else if(/^non.?local$/i.test(v))wh='Non Local Warehouse';
     else if(/^\d{2}\/\d{2}\/\d{4}$/.test(v)){if(!ss)ss=v;else if(!se)se=v;}
-    else if(/(guangdong|zhejiang|fujian|jiangsu|shandong|china|india|vietnam|bangladesh)/i.test(v)&&!ffo){ffo=v;}
-    else if(/^N\/A$/i.test(v)&&!ffo&&j>4){ffo=v;}
+    else if(/(guangdong|zhejiang|fujian|jiangsu|shandong|hunan|china|india|vietnam|bangladesh)/i.test(v)&&!ffo)ffo=v;
+    else if(/^N\/A$/i.test(v)&&!ffo&&j>4)ffo=v;
   }
-
-  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
+  const set=(id,v)=>{if(v){const e=document.getElementById(id);if(e)e.value=v;}};
   const setSel=(id,v)=>{const e=document.getElementById(id);if(!e||!v)return;for(const o of e.options)if(o.value.toLowerCase()===v.toLowerCase()){e.value=o.value;return;}};
-
   if(atc)set('f-atc-'+idx,atc);
-  if(tp) set('f-tp-'+idx,tp);
-  if(tb) set('f-tb-'+idx,tb);
-  if(sel)set('f-sel-'+idx,sel);
-  if(wh) setSel('f-wh-'+idx,wh);
-  if(ffo)set('f-ffo-'+idx,ffo);
-  if(ss) set('f-ss-'+idx,toDateInput(ss));
-  if(se) set('f-se-'+idx,toDateInput(se));
-
+  if(tp)set('f-tp-'+idx,tp);if(tb)set('f-tb-'+idx,tb);if(sel)set('f-sel-'+idx,sel);
+  if(wh)setSel('f-wh-'+idx,wh);if(ffo)set('f-ffo-'+idx,ffo);
+  if(ss)set('f-ss-'+idx,toDateInput(ss));if(se)set('f-se-'+idx,toDateInput(se));
   const filled=[tp&&'Price',tb&&'Brand',sel&&'Seller',wh&&'Warehouse',ffo&&'FFO',ss&&'Dates'].filter(Boolean);
-  const el=document.getElementById('temu-applied-'+idx);
-  if(el)el.textContent=filled.length?'✓ '+filled.join(', '):'Nothing detected';
-  toast('Temu: '+(filled.join(', ')||'nothing detected'),'ok');
+  toast('Temu: '+(filled.join(', ')||'nothing detected'),filled.length?'ok':'err');
 }
 
-// ══════════════════════════════════════════════
-// CLIPBOARD PASTE — AMAZON SCRAPER
-// ══════════════════════════════════════════════
-async function pasteAndParseAmz(idx){
-  let raw='';
-  try{raw=await navigator.clipboard.readText();}
-  catch(e){toast('Clipboard access denied — please allow & try again','err');return;}
-  raw=raw.trim();
-  if(!raw){toast('Clipboard is empty','err');return;}
-  parseAmzRaw(idx,raw);
-}
-
-function parseAmzRaw(idx,raw){
+// ════ PARSE AMAZON SCRAPER ════
+// Format: "B0FD4435WL\t37.99" line1, brand line2 (or all tab-separated)
+function parseAmz(idx,raw){
+  if(!raw?.trim()){toast('No Amazon data','err');return;}
   let asin='',ap='',ab='';
-  const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  for(const line of lines){
-    const parts=line.split(/\t+/).map(s=>s.trim()).filter(Boolean);
-    for(const v of parts){
-      if(/^B[A-Z0-9]{9}$/i.test(v)&&!asin){asin=v.toUpperCase();}
-      else if(/^[\d.]+$/.test(v)&&!ap&&parseFloat(v)>0&&parseFloat(v)<99999){ap=v;}
-      else if(!ab&&v.length>1&&!/^B[A-Z0-9]{9}$/i.test(v)&&!/^[\d.]+$/.test(v)){ab=v;}
-    }
+  const lines=raw.trim().split('\n').map(l=>l.trim()).filter(Boolean);
+  const allToks=[];lines.forEach(l=>l.split(/\t+/).forEach(t=>{if(t.trim())allToks.push(t.trim());}));
+  for(const v of allToks){
+    if(/^B[A-Z0-9]{9}$/i.test(v)&&!asin){asin=v.toUpperCase();}
+    else if(/^\$?[\d]+\.[\d]{2}$/.test(v)&&!ap){ap=v.replace('$','');}
   }
-  const set=(id,v)=>{const e=document.getElementById(id);if(e&&v)e.value=v;};
-  if(asin)set('f-asin-'+idx,asin);
-  if(ap)  set('f-ap-'+idx,ap);
-  if(ab)  set('f-ab-'+idx,ab);
-
+  if(!ap){for(const v of allToks){if(/^[\d.]+$/.test(v)&&parseFloat(v)>0&&v!==asin){ap=v;break;}}}
+  // Brand: any string token that isn't ASIN, price, or short keyword
+  for(const v of allToks){
+    if(/^B[A-Z0-9]{9}$/i.test(v)||/^[\d.]+$/.test(v))continue;
+    if(!ab&&v.length>1){ab=v;break;}
+  }
+  const set=(id,v)=>{if(v){const e=document.getElementById(id);if(e)e.value=v;}};
+  if(asin)set('f-asin-'+idx,asin);if(ap)set('f-ap-'+idx,ap);if(ab)set('f-ab-'+idx,ab);
   const applied=[asin&&'ASIN',ap&&'Price',ab&&'Brand'].filter(Boolean);
-  const el=document.getElementById('amz-applied-'+idx);
-  if(el)el.textContent=applied.length?'✓ '+applied.join(', '):'Nothing detected';
   if(applied.length)toast('Amazon: '+applied.join(', ')+' ✓','ok');
   else toast('No ASIN/Price/Brand detected','err');
 }
 
-// ══════════════════════════════════════════════
-// EXPORT EXCEL
-// ══════════════════════════════════════════════
-function exportExcel(){
+// ════ SAVE EXPANDED ════
+function saveExpanded(){
+  if(expandedIdx===null)return;
+  const i=expandedIdx;
+  const g=id=>{const e=document.getElementById(id);return e?e.value:'';};
+  rows[i].ms=g('f-ms-'+i);
+  rows[i].mt=['INF','INVALID'].includes(rows[i].ms)?'NULL':g('f-mt-'+i);
+  rows[i].inf=g('f-inf-'+i);rows[i].atc=g('f-atc-'+i);
+  rows[i].asin=g('f-asin-'+i);rows[i].ap=g('f-ap-'+i);
+  rows[i].tp=g('f-tp-'+i);rows[i].inx=g('f-inx-'+i);
+  rows[i].tb=g('f-tb-'+i);rows[i].ab=g('f-ab-'+i);rows[i].sel=g('f-sel-'+i);
+  rows[i].lens=g('f-lens-'+i);rows[i].title=g('f-title-'+i);
+  rows[i].iasin=g('f-iasin-'+i);rows[i].wh=g('f-wh-'+i);rows[i].ffo=g('f-ffo-'+i);
+  rows[i].ss=fromDateInput(g('f-ss-'+i));rows[i].se=fromDateInput(g('f-se-'+i));
+  autoSave();
+}
+function saveRow(idx,status){
   saveExpanded();
-  const mkpl=rows.find(r=>r.mkpl)?.mkpl||'';
-  const data=rows.map(r=>({
-    'MKPL':              r.mkpl||mkpl,
-    'Suggested ASIN':    r.sugAsin||'',
-    'PRODUCT URL':       r.url,
-    'Sku':               r.sku,
-    'Mapping Status':    r.ms,
-    'Matching Type':     ['INF','INVALID'].includes(r.ms)?'NULL':r.mt,
-    'INF Reason':        r.inf,
-    'Mapped ATC URL':    r.atc,
-    'Mapped ASIN':       r.asin,
-    'Amazon Price':      r.ap,
-    'Temu Price':        r.tp,
-    'Inexact Reason Code': r.inx,
-    'Temu Brand':        r.tb,
-    'Amazon Brand':      r.ab,
-    'Temu Seller Name':  r.sel,
-    'Amazon Lens search done':   r.lens,
-    'Title/Custom title search': r.title,
-    'INF ASIN':          r.iasin,
-    'Warehouse Details': r.wh,
-    'FFO':               r.ffo,
-    'Shipping Start Date': r.ss,
-    'Shipping end Date': r.se,
-    'Mapper ID':         MAPPER_ID
-  }));
-
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.json_to_sheet(data);
-  ws['!cols']=[6,14,60,16,13,13,22,60,14,12,12,36,20,20,22,8,22,14,20,22,16,16,10].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb,ws,'Mapped Batch');
-  XLSX.writeFile(wb, getExportFilename()+'.xlsx');
-  toast('Exported: '+getExportFilename()+'.xlsx ✓','ok');
+  rows[idx].status=status==='done'?'done':'inf';
+  if(status==='done'&&!rows[idx].ms)rows[idx].ms='IF';
+  else if(status==='inf'&&!['INF','INVALID'].includes(rows[idx].ms))rows[idx].ms='INF';
+  collapseAll();toast('Saved as '+status,'ok');
+}
+function saveAndNext(idx){
+  saveExpanded();
+  const v=vis();
+  const ci=v.findIndex(r=>r.idx===idx);
+  const next=v[ci+1];
+  if(next){expandedIdx=next.idx;if(rows[next.idx].status==='pending'){rows[next.idx].status='open';stats();}}
+  else{expandedIdx=null;toast('Last row reached!','info');}
+  render();
+  if(expandedIdx!==null)setTimeout(()=>document.getElementById('exp-'+expandedIdx)?.scrollIntoView({block:'nearest',behavior:'smooth'}),40);
 }
 
-// ══════════════════════════════════════════════
-// RESET
-// ══════════════════════════════════════════════
+// ════ COPY FULL ROW ════
+function copyFullRow(idx){
+  const r=rows[idx];
+  const mid=document.getElementById('mapper-id')?.value||'mapper';
+  const mkpl=r.mkpl||(rows.find(x=>x.mkpl)?.mkpl||'');
+  const mt=['INF','INVALID'].includes(r.ms)?'NULL':r.mt;
+  const row=[mkpl,r.sugAsin||'',r.url,r.sku,r.ms,mt,r.inf,r.atc,r.asin,r.ap,r.tp,r.inx,r.tb,r.ab,r.sel,r.lens,r.title,r.iasin,r.wh,r.ffo,r.ss,r.se,mid].join('\t');
+  navigator.clipboard.writeText(row).then(()=>toast('Full row copied — Ctrl+V into Excel ✓','ok')).catch(()=>{const ta=document.createElement('textarea');ta.value=row;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied ✓','ok');});
+}
+
+// ════ EXPORT EXCEL (styled) ════
+function exportExcel(){
+  saveExpanded();
+  const mid=document.getElementById('mapper-id')?.value||'mapper';
+  const mkpl=rows.find(r=>r.mkpl)?.mkpl||'';
+  const now=new Date();
+  const fname=`${mid}_${MONTHS[now.getMonth()]}_${String(now.getDate()).padStart(2,'0')}`;
+
+  const HEADERS=['MKPL','Suggested ASIN','PRODUCT URL','Sku','Mapping Status','Matching Type','INF Reason','Mapped ATC URL','Mapped ASIN','Amazon Price','Temu Price','Inexact Reason Code','Temu Brand','Amazon Brand','Temu Seller Name','Amazon Lens search done','Title/Custom title search','INF ASIN','Warehouse Details','FFO','Shipping Start Date','Shipping end Date','Mapper ID'];
+  const YCOLS=new Set([2,22]); // PRODUCT URL, Mapper ID
+
+  const dataRows=rows.map(r=>{
+    const mt=['INF','INVALID'].includes(r.ms)?'NULL':r.mt;
+    return[r.mkpl||mkpl,r.sugAsin||'',r.url,r.sku,r.ms,mt,r.inf,r.atc,r.asin,r.ap,r.tp,r.inx,r.tb,r.ab,r.sel,r.lens,r.title,r.iasin,r.wh,r.ffo,r.ss,r.se,mid];
+  });
+
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([HEADERS,...dataRows]);
+
+  const brd={top:{style:'thin',color:{rgb:'C4C4DC'}},bottom:{style:'thin',color:{rgb:'C4C4DC'}},left:{style:'thin',color:{rgb:'C4C4DC'}},right:{style:'thin',color:{rgb:'C4C4DC'}}};
+  const hdrBase={font:{bold:true,sz:9,color:{rgb:'EAEAF5'}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:brd};
+  const hdrNorm={...hdrBase,fill:{fgColor:{rgb:'1E1E2E'}}};
+  const hdrYellow={fill:{fgColor:{rgb:'FFE600'}},font:{bold:true,sz:9,color:{rgb:'111111'}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:brd};
+
+  // Style header row
+  HEADERS.forEach((h,c)=>{
+    const ref=XLSX.utils.encode_cell({r:0,c});
+    if(!ws[ref])ws[ref]={v:h,t:'s'};
+    ws[ref].s=YCOLS.has(c)?hdrYellow:hdrNorm;
+  });
+
+  // Style data rows
+  dataRows.forEach((row,ri)=>{
+    const ms=row[4];
+    const isInf=['INF','INVALID'].includes(ms);
+    row.forEach((val,c)=>{
+      const ref=XLSX.utils.encode_cell({r:ri+1,c});
+      if(!ws[ref])ws[ref]={v:val??'',t:'s'};
+      let fillRgb;
+      if(isInf)fillRgb=YCOLS.has(c)?'FFCB96':'FFE8CC';
+      else fillRgb=YCOLS.has(c)?'FEFFD6':'FFFFFF';
+      ws[ref].s={fill:{fgColor:{rgb:fillRgb}},border:brd,alignment:{vertical:'center'}};
+    });
+  });
+
+  ws['!cols']=[6,14,55,16,13,12,22,55,14,11,11,36,18,18,22,7,22,14,18,22,16,16,10].map(w=>({wch:w}));
+  ws['!rows']=[{hpt:38},...dataRows.map(()=>({hpt:16}))];
+  XLSX.utils.book_append_sheet(wb,ws,'Mapped Batch');
+  XLSX.writeFile(wb,fname+'.xlsx');
+  toast('Exported: '+fname+'.xlsx ✓','ok');
+}
+
 function resetDash(){
-  if(!confirm('Start new batch? Unsaved work will be lost.'))return;
+  if(!confirm('Start new batch?'))return;
   rows=[];filt='all';expandedIdx=null;
   document.getElementById('dash').style.display='none';
-  document.getElementById('uppage').style.display='block';
+  document.getElementById('uppage').style.display='flex';
   document.getElementById('expbtn').style.display='none';
-  document.getElementById('hchips').style.display='none';
-  document.getElementById('mkpl-display').style.display='none';
+  document.getElementById('mid-bar').style.display='none';
+  document.getElementById('mkpl-pill').style.display='none';
   document.getElementById('finput').value='';
   document.getElementById('parea').value='';
   document.querySelectorAll('.ft').forEach((t,i)=>t.classList.toggle('act',i===0));
 }
 
-// ══════════════════════════════════════════════
-// KEYBOARD
-// ══════════════════════════════════════════════
+// ════ GUIDELINES ════
+let gTab='sl';
+function openGuidelines(){document.getElementById('gpanel').classList.add('open');document.getElementById('ovl').classList.add('show');}
+function closeGuidelines(){document.getElementById('gpanel').classList.remove('open');document.getElementById('ovl').classList.remove('show');}
+function setGTab(t){gTab=t;buildGuidelines();}
+function toggleRule(el){el.closest('.grule').classList.toggle('gopen');}
+function buildGuidelines(){
+  const body=document.getElementById('gpbody');if(!body)return;
+  body.innerHTML='<div class="gprio"><div class="gprio-col"><div class="gprio-hd">Finding INX IF</div><div class="gprio-r"><span class="pnum pn1">1</span>Brand, Color</div><div class="gprio-r"><span class="pnum pn2">2</span>Size, Material</div><div class="gprio-r"><span class="pnum pn3">3</span>Spec, Pack, Design</div></div><div class="gprio-col"><div class="gprio-hd">Reason Code Priority</div><div class="gprio-r"><span class="pnum pn1">1</span>Spec, Pack, Design</div><div class="gprio-r"><span class="pnum pn2">2</span>Size, Material</div><div class="gprio-r"><span class="pnum pn3">3</span>Brand, Color</div></div></div><div class="gtabs">'+['sl','hl','cons','rules'].map(t=>`<button class="gtab ${gTab===t?'act':''}" onclick="setGTab('${t}')">${{sl:'Softlines',hl:'Hardlines',cons:'Consumables',rules:'Rules'}[t]}</button>`).join('')+'</div>'+(gTab==='sl'?slG():gTab==='hl'?hlG():gTab==='cons'?consG():rulesG());
+}
+function gr(tag,tc,title,items,open){return'<div class="grule'+(open?' gopen':'')+'"><div class="grule-hd" onclick="toggleRule(this)"><span class="gtag" style="background:rgba('+tc+',0.12);color:rgb('+tc+')">'+tag+'</span><span class="grule-title">'+title+'</span><span class="chev">▶</span></div><div class="grule-body">'+items.map(x=>'<div class="gi">'+x+'</div>').join('')+'</div></div>';}
+function slG(){return[gr('👕','255,140,58','Apparel',['<strong>Gender:</strong> Unisex → Men/Women OK','<strong>Size:</strong> any size = Exact IF','<strong>Material, design, product type</strong> must match','Neck type: crew ≠ V-neck (NOT minor)','Pack: follow Pack Inexact rules'],true),gr('👟','255,140,58','Shoes',['Material & toe type must match','Kids: <strong>Toddler = Toddler ONLY</strong>','Print must match (snake = snake)']),gr('💍','255,140,58','Jewellery',['<strong>Carat</strong> must match (14k/18k/22k)','<strong>Gold color</strong> must match (Yellow/White/Rose)','Chain <strong>length</strong> must match','Rings: size can mismatch if all specs match']),gr('⌚','255,140,58','Watches',['<strong>Dial size & strap size</strong> must match','Display type must match (Analog vs Digital)']),gr('🧳','255,140,58','Luggage',['No. of wheels must match','±10% size = Exact IF, >10% = Size Inexact'])].join('');}
+function hlG(){return['<div class="gnote" style="margin:0">⚠️ All HL: <strong>Brand & Color</strong> must match.</div>',gr('🔧','96,165,250','Common HL',['Model, size, pack must match','Condition: New=New / Renewed=Refurbished'],true),gr('🎹','96,165,250','Musical',['<strong>Keyboards: no. of keys must match</strong>','<strong>Guitars: left-hand = left-hand only</strong>']),gr('🏎️','96,165,250','Tyres',['<strong>Season: Winter = Winter ONLY</strong>','RIM size must match']),gr('🧸','96,165,250','Toys',['<strong>Age group must match</strong> — 3+ = 3+ only'])].join('');}
+function consG(){return['<div class="gnote" style="margin:0">⚠️ All Consumables: <strong>Brand & Color</strong> match exactly.</div>',gr('🛒','74,222,128','Grocery',['<strong>Pack & quantity:</strong> 5kg=5kg','<strong>Flavor must match</strong>','Organic=Organic / Vegan=Vegan'],true),gr('💄','74,222,128','Beauty',['Flavor & fragrance must match','EDP=EDP / EDT=EDT']),gr('👶','74,222,128','Baby',['<strong>Size: 0-6m=0-6m · 12-24m=1-2yrs</strong>','Gender must match'])].join('');}
+function rulesG(){return[gr('📦','255,98,0','Pack Inexact',['SL: Temu 1→Amz 3 = <strong>IF (Pack Inexact)</strong> ✓','HL: Temu 10→Amz 3 = <strong>INF</strong> ✕','Consumables 1×20ml→2×20ml = <strong>IF</strong> ✓','Consumables 1×20ml→2×10ml = <strong>INF</strong> ✕'],true),gr('📐','255,98,0','Size Inexact',['Apparel/Shoes/Rings: any size = Exact IF','Other SL & HL: ±10%=Exact IF, >10%=SIZE INEXACT']),gr('🎨','255,98,0','Design/Pattern',['Minor diff (sleeve, pockets, stitching) = Exact IF','Neck pattern = NOT minor — Inexact IF','Different design type or pattern family = Inexact IF']),gr('🔗','248,113,113','URL States',['"Unavailable/discontinued" → <strong>INVALID</strong>','"Sold out" → <strong>Comp OOS</strong> → mark as INF','Captcha: no Cisco VPN, clear cookies, try different browser']),gr('🏷️','255,98,0','Brand & Color',['SL: Generic=Generic → Exact IF if all specs match','HL/Cons: brand must match exactly','Color: match to Primary Color Table group'])].join('');}
+
+// ════ KEYBOARD ════
 document.addEventListener('keydown',e=>{
   if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
   if(e.key==='Escape'){saveExpanded();collapseAll();}
 });
 
-// ══════════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════════
+// ════ TOAST ════
 function toast(msg,type='info'){
   const ico={ok:'✅',err:'❌',info:'ℹ️'};
   const cls={ok:'tok',err:'terr',info:'tinfo'};
@@ -1122,80 +1037,9 @@ function toast(msg,type='info'){
   t.className='toast '+(cls[type]||'tinfo');
   t.innerHTML='<span>'+(ico[type]||'•')+'</span><span>'+msg+'</span>';
   document.getElementById('toasts').appendChild(t);
-  setTimeout(()=>t.style.opacity='0',type==='info'?4500:3000);
-  setTimeout(()=>t.remove(),type==='info'?5100:3600);
+  setTimeout(()=>t.style.opacity='0',type==='info'?4000:3000);
+  setTimeout(()=>t.remove(),type==='info'?4600:3600);
 }
-
-// ══════════════════════════════════════════════
-// GUIDELINES
-// ══════════════════════════════════════════════
-let gTab='sl';
-function openGuidelines(){document.getElementById('gpanel').classList.add('open');document.getElementById('ovl').classList.add('show');}
-function closeGuidelines(){document.getElementById('gpanel').classList.remove('open');document.getElementById('ovl').classList.remove('show');}
-function setGTab(t){gTab=t;buildGuidelines();}
-function toggleRule(el){el.closest('.grule').classList.toggle('gopen');}
-
-function buildGuidelines(){
-  const body=document.getElementById('gpbody');
-  if(!body)return;
-  body.innerHTML=
-    '<div class="gprio">'+
-    '<div class="gprio-col"><div class="gprio-hd">Finding INX IF Priority</div>'+
-    '<div class="gprio-row"><span class="pnum pn1">1</span>Brand, Color</div>'+
-    '<div class="gprio-row"><span class="pnum pn2">2</span>Size, Material</div>'+
-    '<div class="gprio-row"><span class="pnum pn3">3</span>Spec, Pack, Design/Pattern</div></div>'+
-    '<div class="gprio-col"><div class="gprio-hd">Giving Reason Code Priority</div>'+
-    '<div class="gprio-row"><span class="pnum pn1">1</span>Spec, Pack, Design/Pattern</div>'+
-    '<div class="gprio-row"><span class="pnum pn2">2</span>Size, Material</div>'+
-    '<div class="gprio-row"><span class="pnum pn3">3</span>Brand, Color</div></div></div>'+
-    '<div class="gtab-row">'+
-    ['sl','hl','cons','rules'].map(t=>'<button class="gtab '+(gTab===t?'act':'')+'" onclick="setGTab(\''+t+'\')">'+{sl:'Softlines',hl:'Hardlines',cons:'Consumables',rules:'Rules'}[t]+'</button>').join('')+
-    '</div>'+
-    (gTab==='sl'?slG():gTab==='hl'?hlG():gTab==='cons'?consG():rulesG());
-}
-
-function gr(tag,tc,title,items,open){
-  return'<div class="grule'+(open?' gopen':'')+'">'+
-    '<div class="grule-hd" onclick="toggleRule(this)">'+
-    '<span class="gtag" style="background:rgba('+tc+',0.12);color:rgb('+tc+')">'+tag+'</span>'+
-    '<span class="grule-title">'+title+'</span>'+
-    '<span class="chev">▶</span></div>'+
-    '<div class="grule-body">'+items.map(x=>'<div class="gi">'+x+'</div>').join('')+'</div></div>';
-}
-function note(t){return'<div class="gnote">'+t+'</div>';}
-
-function slG(){return[
-  gr('👕','255,140,58','Apparel',['<strong>Gender:</strong> must match — Unisex → Men/Women OK','<strong>Size:</strong> any size = Exact IF','<strong>Material</strong> must match','<strong>Design/pattern/theme</strong> must match','<strong>Product type same:</strong> trousers=trousers, LS=LS','<strong>Neck type:</strong> crew ≠ V-neck — NOT minor','Pack & bundle follow Pack Inexact rules'],true),
-  gr('👟','255,140,58','Shoes',['<strong>Material, toe type</strong> must match','Gender match required','<strong>Kids:</strong> Toddler = Toddler ONLY','Special features (waterproof) must match','<strong>Print must match</strong> — snake = snake']),
-  gr('💍','255,140,58','Jewellery',['<strong>Carat:</strong> 14k/18k/22k must match','<strong>Gold color:</strong> Yellow/White/Rose must match','Chain <strong>length</strong> must match','Rings: size can mismatch if all specs match','Cut type, certified, no. of stones must match']),
-  gr('⌚','255,140,58','Watches',['<strong>Dial size & strap size</strong> must match','Display type: LED/LCD vs Analog vs Digital','Special features (waterproof, alarm) must match']),
-  gr('🧳','255,140,58','Luggage',['No. of wheels must match','Size/dimensions: ±10% = Exact IF, >10% = Size Inexact','Material & color must match'])
-].join('');}
-
-function hlG(){return[
-  '<div class="gnote" style="margin:0">⚠️ All HL require <strong>Brand & Color</strong> match. Categories: Furniture, Home, Kitchen, Appliances, Tyres, Tools, Auto, Sports, PC, Camera, Office, Wireless, Musical, Electronics, Toys, Lawn.</div>',
-  gr('🔧','96,165,250','Common HL Rules',['Keywords & product type match','Model must match','Size/dimensions match','Pack single=single / 2-pack=2-pack','Condition: New=New / Renewed=Refurbished','Power output & Wired/Wireless match'],true),
-  gr('🎹','96,165,250','Musical Instruments',['<strong>Keyboards: no. of keys must match</strong>','<strong>Guitars: left-hand only = left-hand</strong>','Electric vs Acoustic must match']),
-  gr('🏎️','96,165,250','Tyres',['RIM size must match','<strong>Season: Winter = Winter ONLY</strong>']),
-  gr('💻','96,165,250','PC / Electronics',['RAM/ROM, screen size must match','OS version minor mismatch OK (Win8 → Win8.1)']),
-  gr('🧸','96,165,250','Toys',['<strong>Age group must match</strong> — 3+ = 3+ only'])
-].join('');}
-
-function consG(){return[
-  '<div class="gnote" style="margin:0">⚠️ All Consumables require <strong>Brand & Color</strong> match exactly.</div>',
-  gr('🛒','74,222,128','Grocery',['<strong>Pack & quantity must match</strong> — 5kg=5kg','<strong>Flavor must match</strong>','Organic=Organic / Vegan=Vegan ONLY'],true),
-  gr('💄','74,222,128','Beauty',['<strong>Flavor & fragrance must match</strong>','Perfumes: EDP=EDP / EDT=EDT','Gift sets: items must match']),
-  gr('🐾','74,222,128','Pet Products',['<strong>Flavor must match</strong>','Strength (mg) must match']),
-  gr('👶','74,222,128','Baby Products',['<strong>Size: 0-6m=0-6m · 12-24m=1-2yrs</strong>','Gender must match'])
-].join('');}
-
-function rulesG(){return[
-  gr('📦','255,98,0','Pack Inexact Logic',['SL: Temu 1 → Amz 3 = <strong>IF (Pack Inexact)</strong> ✓','HL: Temu 1 → Amz 3 = <strong>IF (Pack Inexact)</strong> ✓','HL: Temu 10 → Amz 3 = <strong>INF</strong> ✕ (Bundle mismatch)','Consumables 1×10kg → 2×10kg = <strong>INF</strong> ✕','Consumables 1×20ml → 2×20ml = <strong>IF (Pack Inexact)</strong> ✓','Consumables 1×20ml → 2×10ml = <strong>INF</strong> ✕'],true),
-  gr('📐','255,98,0','Size Inexact',['Apparel/Shoes/Rings: any size = Exact IF','Other SL & HL: ±10% = Exact IF','> 10% = SIZE INEXACT']),
-  gr('🎨','255,98,0','Design/Pattern',['Minor diff (sleeve, pockets, stitching) = Exact IF','Neck pattern diff = NOT minor','Different design type = Inexact IF','Different pattern family (Plain vs Stripe) = Inexact IF']),
-  gr('🔗','248,113,113','URL States',['"Unavailable for purchase" / "discontinued" → <strong>Invalid URL</strong>','"Sold out" → <strong>Comp OOS</strong>','Captcha: no Cisco VPN, clear cookies, try different browser']),
-  gr('🏷️','255,98,0','Brand & Color',['SL: Generic = Generic → Exact IF if all specs match','HL/Cons: brand must match exactly','Color: match to Primary Color Table group if exact unavailable'])
-].join('');}
 </script>
 </body>
 </html>
