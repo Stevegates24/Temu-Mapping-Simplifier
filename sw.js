@@ -1,5 +1,5 @@
 // MapFlow Service Worker v1.0
-const CACHE = 'mapflow-1.1';
+const CACHE = 'mapflow-v1.1';
 const OFFLINE_URL = 'index.html';
 
 // Assets to cache on install (critical for offline use)
