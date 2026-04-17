@@ -1,4 +1,4 @@
-// MapFlow Service Worker v1.0
+// MapFlow Service Worker v2.0
 const CACHE = 'mapflow-v2.0';
 const OFFLINE_URL = 'index.html';
 
