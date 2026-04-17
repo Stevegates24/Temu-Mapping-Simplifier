@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="MapFlow"/>
 <meta name="theme-color" content="#FF6200"/>
 <link rel="manifest" href="manifest.json"/>
-<title>by Steve Gates</title>
+<title>by Steve Gates 😎</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23FF6200'/><text x='16' y='22' text-anchor='middle' font-size='16' fill='white' font-family='Arial'>⇌</text></svg>"/>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
@@ -49,7 +49,7 @@
   --bg:#EEEEF8;--b2:#FFFFFF;--b3:#E6E6F4;--b4:#D8D8EE;--b5:#F2F2FC;
   --bd:rgba(70,70,130,0.09);--bd2:rgba(70,70,130,0.15);--bd3:rgba(70,70,130,0.25);
   --tx:#14142A;--mt:#5858A0;--sb:#C0C0D8;
-  --blob1:rgba(255,98,0,0.05);--blob2:rgba(100,50,220,0.03);
+  --blob1:rgba(255,98,0,0.18);--blob2:rgba(100,50,220,0.09);
   --hdr-bg:linear-gradient(90deg,#fff5f0,#FFFFFF);
   --up-panel:rgba(255,255,255,0.7);--card-bg:#FFFFFF;
   --date-clr:none;--ei-bg:#E0E0F4;--sec-bg:#D4D4EC;
@@ -345,6 +345,124 @@ tbody td{padding:11px 13px;border-bottom:1px solid var(--bd);vertical-align:midd
 .gi::before{content:'•';color:var(--or);flex-shrink:0;margin-top:2px;}
 .gnote{background:rgba(255,98,0,.06);border-left:2px solid var(--or);padding:6px 9px;border-radius:0 6px 6px 0;margin-top:5px;font-size:11.5px;}
 
+/* URL CHIP in expand top bar */
+.url-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--b4);border:1px solid var(--bd2);
+  border-radius:6px;padding:4px 10px;
+  font-family:var(--mo);font-size:10px;color:var(--mt);
+  cursor:pointer;transition:all .12s;max-width:340px;
+  white-space:nowrap;overflow:hidden;
+  flex:1;min-width:0;
+}
+.url-chip:hover{background:var(--b5);color:var(--tx);border-color:var(--bd3);}
+.url-chip-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+
+/* SETTINGS PANEL */
+.settings-panel{
+  position:fixed;right:0;top:0;bottom:0;width:340px;
+  background:var(--b2);border-left:1px solid var(--bd2);
+  z-index:250;transform:translateX(100%);
+  transition:transform .26s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.settings-panel.open{transform:translateX(0);}
+.sp-hdr{
+  padding:14px 18px;border-bottom:1px solid var(--bd2);
+  display:flex;align-items:center;gap:10px;background:var(--b3);
+  flex-shrink:0;
+}
+.sp-hdr-ico{
+  width:30px;height:30px;border-radius:8px;
+  background:rgba(255,98,0,.12);border:1px solid rgba(255,98,0,.2);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.sp-hdr-title{font-size:14px;font-weight:800;flex:1;}
+.sp-close{background:var(--b4);border:1px solid var(--bd2);color:var(--mt);
+  border-radius:6px;padding:4px 9px;cursor:pointer;font-size:13px;line-height:1;}
+.sp-close:hover{color:var(--tx);}
+.sp-body{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:6px;}
+.sp-footer{
+  padding:14px 16px;border-top:1px solid var(--bd2);
+  background:var(--b3);flex-shrink:0;
+}
+.sp-footer-greeting{font-size:13px;font-weight:700;color:var(--tx);margin-bottom:2px;}
+.sp-footer-dt{font-size:10.5px;color:var(--mt);font-family:var(--mo);}
+.sp-footer-quote{font-size:10px;color:var(--sb);font-style:italic;margin-top:6px;line-height:1.55;}
+.sp-footer-about{
+  margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sp-footer-brand{font-size:10px;color:var(--mt);}
+.sp-footer-brand strong{color:var(--or);}
+.sp-footer-ver{font-size:9px;color:var(--sb);font-family:var(--mo);}
+
+/* Settings sections */
+.sp-sec{background:var(--b3);border:1px solid var(--bd2);border-radius:11px;overflow:hidden;}
+.sp-sec-hd{
+  padding:11px 14px;font-size:10px;font-weight:800;
+  color:var(--mt);text-transform:uppercase;letter-spacing:.9px;
+  border-bottom:1px solid var(--bd);background:var(--b4);
+  display:flex;align-items:center;gap:6px;
+}
+.sp-sec-hd svg{opacity:.6;}
+.sp-row{
+  padding:10px 14px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--bd);font-size:12.5px;
+  transition:background .1s;
+}
+.sp-row:last-child{border-bottom:none;}
+.sp-row:hover{background:rgba(255,255,255,.02);}
+.sp-label{flex:1;font-weight:500;color:var(--tx);}
+.sp-label small{display:block;font-size:10px;color:var(--mt);font-weight:400;margin-top:1px;}
+
+/* Accent color swatches */
+.accent-swatches{display:flex;gap:6px;flex-wrap:wrap;}
+.accent-sw{
+  width:26px;height:26px;border-radius:7px;cursor:pointer;
+  border:2px solid transparent;transition:all .15s;
+}
+.accent-sw:hover{transform:scale(1.12);}
+.accent-sw.active{border-color:var(--tx);box-shadow:0 0 0 1px var(--tx);}
+
+/* Toggle switch */
+.toggle{
+  position:relative;width:38px;height:22px;flex-shrink:0;
+}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{
+  position:absolute;inset:0;border-radius:11px;
+  background:var(--b5);border:1px solid var(--bd2);
+  cursor:pointer;transition:background .2s;
+}
+.toggle input:checked + .toggle-track{background:var(--or);border-color:var(--or);}
+.toggle-thumb{
+  position:absolute;top:3px;left:3px;
+  width:14px;height:14px;border-radius:50%;
+  background:#fff;transition:left .2s;pointer-events:none;
+}
+.toggle input:checked ~ .toggle-thumb{left:19px;}
+
+/* Blob slider */
+.blob-slider{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:4px;border-radius:4px;
+  background:var(--b5);border:1px solid var(--bd2);outline:none;cursor:pointer;
+}
+.blob-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:var(--or);cursor:pointer;
+  border:2px solid var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.3);
+}
+.settings-btn{
+  width:32px;height:32px;border:1px solid var(--bd2);border-radius:8px;
+  background:var(--b3);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:all .15s;flex-shrink:0;
+}
+.settings-btn:hover{background:var(--b4);border-color:var(--bd3);}
+.settings-btn svg{opacity:.7;}
+.settings-btn:hover svg{opacity:1;}
+
 /* OVL / TOAST */
 .ovl{position:fixed;inset:0;background:rgba(0,0,0,.42);backdrop-filter:blur(3px);z-index:150;opacity:0;pointer-events:none;transition:opacity .2s;}
 .ovl.show{opacity:1;pointer-events:all;}
@@ -356,6 +474,12 @@ tbody td{padding:11px 13px;border-bottom:1px solid var(--bd);vertical-align:midd
 @keyframes tin{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
 /* Light overrides */
+[data-theme="light"] .settings-panel{background:#FFFFFF;}
+[data-theme="light"] .sp-hdr,[data-theme="light"] .sp-sec-hd,[data-theme="light"] .sp-footer{background:#F2F2FC;}
+[data-theme="light"] .sp-sec{background:#FFFFFF;}
+[data-theme="light"] .sp-row:hover{background:rgba(0,0,0,.02);}
+[data-theme="light"] .accent-sw{box-shadow:0 1px 4px rgba(0,0,0,.2);}
+[data-theme="light"] .toggle-track{background:#D8D8EE;}
 [data-theme="light"] .ei,[data-theme="light"] .ei-sec{background:var(--ei-bg);}
 [data-theme="light"] .ei-sec{background:var(--sec-bg);}
 [data-theme="light"] .fin,[data-theme="light"] .fsel,[data-theme="light"] .modal-inp{background:#FFFFFF;color:var(--tx);}
@@ -389,10 +513,15 @@ tbody td{padding:11px 13px;border-bottom:1px solid var(--bd);vertical-align:midd
   <div class="hlogo">⇌</div>
   <div><div class="htitle">Map<span>Flow</span></div><div class="hsub">Temu → Amazon · by Steve Gates</div></div>
   <div class="hright">
-        <button class="theme-btn" id="theme-btn" onclick="cycleTheme()" title="Change theme"></button>
+    <button class="theme-btn" id="theme-btn" onclick="cycleTheme()" title="Change theme"></button>
     <button class="btn bpu btn-sm" onclick="saveSession()">💾 Save</button>
     <button class="btn bgn btn-sm" id="expbtn" onclick="exportExcel()" style="display:none">⬇ Export</button>
     <button class="btn bgh btn-sm" onclick="openGuidelines()">📋 Guidelines</button>
+    <button class="settings-btn" onclick="openSettings()" title="Settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+    </button>
   </div>
 </header>
 
@@ -423,7 +552,7 @@ tbody td{padding:11px 13px;border-bottom:1px solid var(--bd);vertical-align:midd
   </div>
 </div>
 
-<div class="ovl" id="ovl" onclick="closeGuidelines()"></div>
+<div class="ovl" id="ovl"></div>
 
 <!-- UPLOAD PAGE -->
 <div id="uppage">
@@ -505,6 +634,103 @@ tbody td{padding:11px 13px;border-bottom:1px solid var(--bd);vertical-align:midd
     </div>
   </div>
 </div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-panel" id="settings-panel">
+  <div class="sp-hdr">
+    <div class="sp-hdr-ico">⚙️</div>
+    <div class="sp-hdr-title">Settings</div>
+    <button class="sp-close" onclick="closeSettings()">✕</button>
+  </div>
+  <div class="sp-body">
+
+    <!-- APPEARANCE -->
+    <div class="sp-sec">
+      <div class="sp-sec-hd">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a5 5 0 015 5c0 2.76-2.24 5-5 5s-5-2.24-5-5a5 5 0 015-5z"/></svg>
+        Appearance
+      </div>
+      <div class="sp-row">
+        <div class="sp-label">Theme<small>Dark · Light · Pitch</small></div>
+        <button class="theme-btn" id="theme-btn-s" onclick="cycleTheme()" style="flex-shrink:0"></button>
+      </div>
+      <div class="sp-row">
+        <div class="sp-label">Accent Color<small>Pick your UI accent</small></div>
+        <div class="accent-swatches" id="accent-swatches"></div>
+      </div>
+    </div>
+
+    <!-- AMBIENT GLOW (BLOB) -->
+    <div class="sp-sec">
+      <div class="sp-sec-hd">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        Ambient Glow
+      </div>
+      <div class="sp-row">
+        <div class="sp-label">Enable Glow Effect<small>Mouse-tracking background light</small></div>
+        <label class="toggle">
+          <input type="checkbox" id="blob-toggle" onchange="toggleBlob(this.checked)" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="sp-row" id="blob-intensity-row">
+        <div class="sp-label">Glow Intensity<small id="blob-pct-label">85%</small></div>
+        <input type="range" class="blob-slider" id="blob-slider" min="0" max="100" value="85" oninput="setBlobIntensity(this.value)" style="width:100px;"/>
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="sp-sec">
+      <div class="sp-sec-hd">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Developer
+      </div>
+
+      <div class="sp-row" style="cursor:pointer"
+onclick="
+location.href='mailto:sg.bhuvan.it@gmail.com?subject=MapFlow%20Feedback&body=Hi%20Steve,%0A%0A';
+setTimeout(()=>{
+  window.open('https://mail.google.com/mail/?view=cm&to=sg.bhuvan.it@gmail.com&su=MapFlow%20Feedback&body=Hi%20Steve,%0A%0A','_blank');
+},500);
+">
+        <div class="sp-label">Contact Developer<small>sg.bhuvan.it@gmail.com</small></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mt);flex-shrink:0"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </div>
+      <div class="sp-row" style="cursor:pointer" onclick="window.open('https://github.com/Stevegates24/Temu-Mapping-Simplifier/issues/new','_blank')">
+        <div class="sp-label">Report a Bug<small>Open issue on GitHub</small></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mt);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+    </div>
+
+    <!-- DATA -->
+    <div class="sp-sec">
+      <div class="sp-sec-hd">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Session
+      </div>
+      <div class="sp-row" style="cursor:pointer" onclick="saveSession();closeSettings()">
+        <div class="sp-label">Save Session<small>Save current work to browser storage</small></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--mt);flex-shrink:0"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+      </div>
+      <div class="sp-row" style="cursor:pointer" onclick="if(confirm('Clear all stored session data?')){clearSession();closeSettings();toast('Session cleared','ok')}">
+        <div class="sp-label" style="color:var(--rlt)">Clear Session Data<small style="color:var(--mt)">Remove saved rows from browser</small></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--rlt)" stroke-width="2" style="flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+      </div>
+    </div>
+
+  </div>
+  <!-- FOOTER -->
+  <div class="sp-footer">
+    <div class="sp-footer-greeting" id="sp-greeting"></div>
+    <div class="sp-footer-dt" id="sp-dt"></div>
+    <div class="sp-footer-quote" id="sp-quote"></div>
+    <div class="sp-footer-about">
+      <div class="sp-footer-brand"><strong>MapFlow</strong> · Temu → Amazon</div>
+      <div class="sp-footer-ver">v9.0 · by Steve Gates</div>
+    </div>
+  </div>
 </div>
 
 <!-- GUIDELINES PANEL -->
@@ -681,9 +907,111 @@ function cycleTheme(){
   const next=THEMES[(THEMES.indexOf(cur)+1)%THEMES.length];
   document.documentElement.setAttribute('data-theme',next);
   localStorage.setItem('mf_theme',next);
-  document.getElementById('theme-btn').textContent=THEME_ICONS[next]||'☀️';
+  const ico=THEME_ICONS[next]||'☀️';
+  document.querySelectorAll('#theme-btn,#theme-btn-s').forEach(b=>{if(b)b.textContent=ico;});
   document.querySelector('meta[name="theme-color"]').content=next==='light'?'#fff5f0':'#FF6200';
 }
+
+// ════ BLOB ════
+// ════ SETTINGS ════
+const ACCENTS=[
+  {id:'orange', label:'Orange (default)', h:'#FF6200',dk:'#CC4E00',lt:'#FF8C3A'},
+  {id:'purple', label:'Purple',           h:'#7C3AED',dk:'#6D28D9',lt:'#A78BFA'},
+  {id:'blue',   label:'Blue',             h:'#2563EB',dk:'#1D4ED8',lt:'#60A5FA'},
+  {id:'green',  label:'Green',            h:'#16A34A',dk:'#15803D',lt:'#4ADE80'},
+  {id:'teal',   label:'Teal',             h:'#0D9488',dk:'#0F766E',lt:'#2DD4BF'},
+  {id:'rose',   label:'Rose',             h:'#E11D48',dk:'#BE123C',lt:'#FB7185'},
+];
+let currentAccent=localStorage.getItem('mf_accent')||'orange';
+let blobEnabled=localStorage.getItem('mf_blob')!=='false';
+let blobIntensity=parseInt(localStorage.getItem('mf_blob_intensity')||'85');
+
+function applyAccent(id){
+  const a=ACCENTS.find(x=>x.id===id)||ACCENTS[0];
+  document.documentElement.style.setProperty('--or',a.h);
+  document.documentElement.style.setProperty('--odk',a.dk);
+  document.documentElement.style.setProperty('--olt',a.lt);
+  currentAccent=id;
+  localStorage.setItem('mf_accent',id);
+  // Update swatch active state
+  document.querySelectorAll('.accent-sw').forEach(sw=>{
+    sw.classList.toggle('active',sw.dataset.accent===id);
+  });
+}
+function buildAccentSwatches(){
+  const el=document.getElementById('accent-swatches');if(!el)return;
+  el.innerHTML=ACCENTS.map(a=>
+    `<div class="accent-sw ${a.id===currentAccent?'active':''}" data-accent="${a.id}"
+      style="background:${a.h}" title="${a.label}"
+      onclick="applyAccent('${a.id}')"></div>`
+  ).join('');
+}
+function toggleBlob(on){
+  blobEnabled=on;localStorage.setItem('mf_blob',on?'true':'false');
+  const b=document.getElementById('blob');
+  if(b)b.style.opacity=on?String(blobIntensity/100):'0';
+  const intensityRow=document.getElementById('blob-intensity-row');
+  if(intensityRow)intensityRow.style.opacity=on?'1':'.35';
+}
+function setBlobIntensity(val){
+  blobIntensity=parseInt(val);
+  localStorage.setItem('mf_blob_intensity',val);
+  const b=document.getElementById('blob');
+  if(b&&blobEnabled)b.style.opacity=String(blobIntensity/100);
+  const lbl=document.getElementById('blob-pct-label');
+  if(lbl)lbl.textContent=val+'%';
+}
+function openSettings(){
+  document.getElementById('settings-panel').classList.add('open');
+  document.getElementById('ovl').classList.add('show');
+  buildAccentSwatches();
+  updateSettingsFooter();
+  // sync toggle state
+  const bt=document.getElementById('blob-toggle');
+  if(bt)bt.checked=blobEnabled;
+  const bs=document.getElementById('blob-slider');
+  if(bs){bs.value=blobIntensity;}
+  const lbl=document.getElementById('blob-pct-label');
+  if(lbl)lbl.textContent=blobIntensity+'%';
+  // sync theme buttons
+  const t=document.documentElement.getAttribute('data-theme')||'dark';
+  const THEME_ICONS={'dark':'☀️ Dark','light':'🌙 Light','pitch':'⚫ Pitch'};
+  document.querySelectorAll('#theme-btn,#theme-btn-s').forEach(b=>{if(b)b.textContent=THEME_ICONS[t]||'☀️';});
+  // Intensity row opacity
+  const intensityRow=document.getElementById('blob-intensity-row');
+  if(intensityRow)intensityRow.style.opacity=blobEnabled?'1':'.35';
+}
+function closeSettings(){
+  document.getElementById('settings-panel').classList.remove('open');
+  document.getElementById('ovl').classList.remove('show');
+}
+const SETTINGS_QUOTES=[
+  '"Every great mapper started with their first URL."',
+  '"Details define quality. Map with care."',
+  '"Speed follows accuracy — never the other way around."',
+  '"The best tool is one that gets out of your way."',
+  '"One precise match beats ten guesses."',
+];
+function updateSettingsFooter(){
+  const now=new Date();
+  const hr=now.getHours();
+  const greet=hr<5?'🌙 Up late?':hr<12?'☀️ Good morning':hr<17?'👋 Good afternoon':hr<21?'🌆 Good evening':'🌙 Good night';
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dt=`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} · ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const sg=document.getElementById('sp-greeting');if(sg)sg.textContent=greet;
+  const sd=document.getElementById('sp-dt');if(sd)sd.textContent=dt;
+  const sq=document.getElementById('sp-quote');if(sq)sq.textContent=SETTINGS_QUOTES[Math.floor(Math.random()*SETTINGS_QUOTES.length)];
+}
+// Init accent + blob on load
+(function(){
+  applyAccent(currentAccent);
+  const b=document.getElementById('blob');
+  if(b){b.style.opacity=blobEnabled?String(blobIntensity/100):'0';}
+})();
+
+// Patch ovl click to also close settings
+document.getElementById('ovl').addEventListener('click',()=>{closeSettings();closeGuidelines();});
 
 // ════ BLOB ════
 {let mx=innerWidth/2,my=innerHeight/2,bx=mx,by=my;document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});(function t(){bx+=(mx-bx)*.05;by+=(my-by)*.05;const b=document.getElementById('blob');if(b){b.style.left=Math.round(bx)+'px';b.style.top=Math.round(by)+'px';}requestAnimationFrame(t);})();}
@@ -779,7 +1107,7 @@ function buildOpenBtn(url,idx){
 // ════ INIT ════
 window.addEventListener('load',()=>{
   const t=document.documentElement.getAttribute('data-theme')||'dark';
-  document.getElementById('theme-btn').textContent=THEME_ICONS[t]||'☀️';
+  document.querySelectorAll('#theme-btn,#theme-btn-s').forEach(b=>{if(b)b.textContent=THEME_ICONS[t]||'☀️';});
   const excel=document.getElementById('up-excel'),paste=document.getElementById('up-paste'),panels=document.getElementById('up-panels');
   if(excel&&paste){
     excel.addEventListener('mouseenter',()=>{excel.classList.add('panel-grow');excel.classList.remove('panel-shrink');paste.classList.add('panel-shrink');paste.classList.remove('panel-grow');});
@@ -1206,8 +1534,19 @@ function setF(f,btn){filt=f;document.querySelectorAll('.ft').forEach(t=>t.classL
 function qstDirect(idx,st){rows[idx].status=st;render();stats();autoSave();}
 // undoRow resets status back to pending — does NOT clear ms or any field data
 function undoRow(idx){rows[idx].status='pending';render();stats();autoSave();}
-// ✅ markDone only changes status — never sets ms (mapping status is set in the expand form only)
-function markDone(idx){rows[idx].status='done';render();stats();autoSave();}
+// markDone — validates that ms is set before marking done
+function markDone(idx){
+  if(!rows[idx].ms){
+    // If this row is expanded, flash the mapping status field
+    if(expandedIdx===idx){
+      const msEl=document.getElementById('f-ms-'+idx);
+      if(msEl){msEl.classList.add('err');setTimeout(()=>msEl.classList.remove('err'),2500);}
+    }
+    toast('Set Mapping Status (IF / INF / INVALID) before marking done','err');
+    return;
+  }
+  rows[idx].status='done';render();stats();autoSave();
+}
 
 // ════ EXPAND ════
 function toggleExpand(idx){saveExpanded();expandedIdx=expandedIdx===idx?null:idx;if(expandedIdx!==null&&rows[expandedIdx].status==='pending'){rows[expandedIdx].status='open';stats();}render();if(expandedIdx!==null)setTimeout(()=>document.getElementById('exp-'+expandedIdx)?.scrollIntoView({block:'nearest',behavior:'smooth'}),40);}
@@ -1246,8 +1585,8 @@ function buildExpand(r){
   const da=st.allDataDisabled;
 
   return`<div class="ei">
-    <!-- TOP BAR -->
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <!-- TOP BAR: scraper buttons + lens + postal — no duplicate open btn -->
+    <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
       <button class="btn btemu btn-sm" onclick="clipPaste('temu',${i})">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
         Temu Scraper
@@ -1256,10 +1595,13 @@ function buildExpand(r){
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
         Amazon Scraper
       </button>
-      ${lensUrl?`<a href="${lensUrl}" target="_blank" class="btn blens btn-sm" onclick="event.stopPropagation()" style="text-decoration:none">🔍 Amazon Lens</a>`:''}
-      ${info?.post?`<button class="btn bgh btn-sm" onclick="copyPostal('${info.post}');event.stopPropagation()" title="Copy postal code for ${info?.name||'region'}" style="font-family:var(--mo);letter-spacing:.5px;color:var(--gold);border-color:rgba(252,211,77,.25);background:rgba(252,211,77,.07)">📮 ${info.post}</button>`:''}
-      <span style="font-family:var(--mo);font-size:10px;color:var(--mt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0" title="${r.url}">${r.url}</span>
-      ${r.url?buildOpenBtn(r.url,i):''}
+      ${lensUrl?`<a href="${lensUrl}" target="_blank" class="btn blens btn-sm" onclick="event.stopPropagation()" style="text-decoration:none">🔍 Lens</a>`:''}
+      ${info?.post?`<button class="btn btn-sm" onclick="copyPostal('${info.post}');event.stopPropagation()" style="font-family:var(--mo);color:var(--gold);border:1px solid rgba(252,211,77,.25);background:rgba(252,211,77,.07)">📮 ${info.post}</button>`:''}
+      <!-- URL chip — truncated, click to copy -->
+      <button class="url-chip" onclick="copyUrl('${r.url}');event.stopPropagation()" title="${r.url}">
+        <span class="url-chip-txt">${r.url.replace(/https?:\/\/(www\.)?temu\.com\/[a-z]{2,8}(-[a-z]{2,8})?\/*/,'').substring(0,55)}…</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;opacity:.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      </button>
     </div>
 
     <!-- MAPPING -->
@@ -1356,14 +1698,15 @@ function buildExpand(r){
       </div>
     </div>
 
-    <!-- ACTIONS -->
+    <!-- ACTIONS — spread across full width -->
     <div class="ei-actions">
+      <button class="btn bor btn-sm" onclick="openWithBrowser('${r.url}',${i});event.stopPropagation()" ${r.url?'':'disabled'}>🔗 Open</button>
       <button class="btn bnext btn-sm" onclick="saveAndNext(${i})">→ Save &amp; Next</button>
-      <button class="btn bcopy btn-sm" onclick="saveExpanded();copyFullRow(${i})">📋 Copy Row</button>
-      <button class="btn bgh btn-sm" onclick="saveExpanded();collapseAll()">Close</button>
-      <button class="btn bgh btn-sm" style="color:var(--rlt);border-color:rgba(220,38,38,.18)" onclick="clearFields(${i})" title="Clear all inputs for this row">🗑 Clear</button>
+      <button class="btn bcopy btn-sm" onclick="saveExpanded();copyFullRow(${i})">📋 Copy</button>
+      <button class="btn bgh btn-sm" style="color:var(--rlt);border-color:rgba(220,38,38,.2)" onclick="clearFields(${i})">🗑 Clear</button>
       ${(r.status==='done'||r.status==='inf')?`<button class="btn bundo btn-sm" onclick="undoRow(${i})">↩ Undo</button>`:''}
-      <button class="btn bgh btn-sm" style="color:var(--mt)" onclick="qstDirect(${i},'skip');collapseAll()">Skip</button>
+      <button class="btn bgh btn-sm" onclick="saveExpanded();collapseAll()">Close</button>
+      <button class="btn bgh btn-sm" style="color:var(--mt);margin-left:auto" onclick="qstDirect(${i},'skip');collapseAll()">Skip</button>
     </div>
   </div>`;
 }
@@ -1565,6 +1908,12 @@ function doSaveAndNext(idx){
 }
 
 // ════ COPY FULL ROW ════
+function copyUrl(url){
+  if(!url)return;
+  navigator.clipboard.writeText(url)
+    .then(()=>toast('URL copied ✓','ok'))
+    .catch(()=>{const t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();toast('Copied ✓','ok');});
+}
 function copyPostal(code){
   navigator.clipboard.writeText(code).then(()=>toast('Postal code '+code+' copied 📮','ok')).catch(()=>{
     const ta=document.createElement('textarea');ta.value=code;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied: '+code,'ok');
